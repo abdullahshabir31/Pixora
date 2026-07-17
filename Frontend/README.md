@@ -1,16 +1,102 @@
-# React + Vite
+# Instagram Clone - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend of the Instagram Clone full-stack application built with **React.js** and **Vite**.
 
-Currently, two official plugins are available:
+The frontend provides a modern and responsive user interface for interacting with the social media platform. It will connect with the FastAPI backend to handle authentication, posts, profiles, likes, comments, and other features.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Tech Stack
 
-## React Compiler
+- React.js
+- Vite
+- JavaScript
+- React Router DOM
+- Axios
+- ESLint
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 📂 Project Structure
 
-## Expanding the ESLint configuration
+```
+Frontend/
+│
+├── public/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── services/
+│   ├── context/
+│   ├── assets/
+│   ├── App.jsx
+│   └── main.jsx
+│
+├── package.json
+├── vite.config.js
+└── eslint.config.js
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## ⚙️ Installation & Setup
+
+Clone the repository:
+
+```bash
+git clone <repository-url>
+```
+
+Move into the frontend folder:
+
+```bash
+cd Frontend
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+The application will run on the local Vite development server.
+
+## ✨ Features
+
+Currently under development:
+
+- User authentication
+- User profiles
+- Create and view posts
+- Like and comment system
+- Follow system
+- Search functionality
+- Responsive design
+
+## 🔗 Backend
+
+This frontend communicates with a FastAPI backend that handles:
+
+- REST APIs
+- Authentication
+- Database operations
+- User and post management
+
+## 📌 Status
+
+🚧 Project is currently in development.
+
+More features will be added gradually.
+
+```
+
+## 👨‍💻 Author
+
+**Abdullah Shabir**
+
+## 🔗 Connect With Me
+
+* GitHub: https://github.com/abdullahshabir31
+* LinkedIn: https://www.linkedin.com/in/abdullahshabir31
+* Portfolio: https://abdullah-shabir-portfolio.vercel.app/
+```
