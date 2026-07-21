@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Boolean, TIMESTAMP, text
+from sqlalchemy import Column, Integer, String, Boolean, TIMESTAMP, text, ForeignKey
 from app.database import Base
+from sqlalchemy.orm import relationship
 
 
 class User(Base):
@@ -18,3 +19,24 @@ class User(Base):
         server_default=text("CURRENT_TIMESTAMP"),
         nullable=False
     )
+
+class Post(Base):
+    __tablename__ = "posts"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    caption = Column(String, nullable=True)
+    image_url = Column(String, nullable=False)
+
+    owner_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    created_at = Column(
+        TIMESTAMP(timezone=True),
+        server_default=text("CURRENT_TIMESTAMP"),
+        nullable=False
+    )
+
+    owner = relationship("User")

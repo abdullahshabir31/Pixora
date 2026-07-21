@@ -23,3 +23,23 @@ class UserResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class PostCreate(BaseModel):
+    caption: str | None = None
+    image_url: str
+
+
+class PostResponse(BaseModel):
+    id: int
+    caption: str | None
+    image_url: str
+    owner_id: int
+    created_at: datetime
+
+    model_config = {
+        "from_attributes": True
+    }
