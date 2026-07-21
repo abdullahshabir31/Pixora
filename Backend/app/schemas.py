@@ -43,3 +43,45 @@ class PostResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class LikeResponse(BaseModel):
+    id: int
+    user_id: int
+    post_id: int
+
+    class Config:
+        from_attributes = True
+
+class CommentCreate(BaseModel):
+    content: str
+
+
+class CommentResponse(BaseModel):
+    id: int
+    content: str
+    user_id: int
+    post_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class FollowResponse(BaseModel):
+    id: int
+    follower_id: int
+    following_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ProfileResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    posts_count: int
+    followers_count: int
+    following_count: int
+
+    class Config:
+        from_attributes = True
