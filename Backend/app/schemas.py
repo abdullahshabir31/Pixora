@@ -37,8 +37,27 @@ class PostResponse(BaseModel):
     id: int
     caption: str | None
     image_url: str
-    owner_id: int
     created_at: datetime
+
+    owner: UserMiniResponse
+
+    likes_count: int
+    comments_count: int
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class FeedResponse(BaseModel):
+    id: int
+    caption: str | None
+    image_url: str
+    created_at: datetime
+
+    owner: UserMiniResponse
+
+    likes_count: int
+    comments_count: int
 
     model_config = {
         "from_attributes": True
@@ -85,3 +104,20 @@ class ProfileResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UserMiniResponse(BaseModel):
+    id: int
+    username: str
+
+    class Config:
+        from_attributes = True
+
+class UserSearchResponse(BaseModel):
+    id: int
+    username: str
+    full_name: str | None
+    profile_image: str | None
+
+    model_config = {
+        "from_attributes": True
+    }

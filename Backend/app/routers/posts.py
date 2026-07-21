@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, status, File, UploadFile
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import or_
 from fastapi import HTTPException
 from app.database import get_db
-from app import models, schemas, oauth2
+from app import models, schemas, oauth2, cloudinary
 
 router = APIRouter(
     prefix="/posts",
@@ -12,13 +13,17 @@ router = APIRouter(
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
 def create_post(
-    post: schemas.PostCreate,
+    caption: str,
+    image: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
+
+    image_url = cloudinary.upload_image(image.file)
+
     new_post = models.Post(
-        caption=post.caption,
-        image_url=post.image_url,
+        caption=caption,
+        image_url=image_url,
         owner_id=current_user.id
     )
 
@@ -26,24 +31,100 @@ def create_post(
     db.commit()
     db.refresh(new_post)
 
-    return new_post
+    # Owner relationship load karne ke liye
+    new_post = db.query(models.Post).options(
+        joinedload(models.Post.owner)
+    ).filter(
+        models.Post.id == new_post.id
+    ).first()
+
+    return {
+        "id": new_post.id,
+        "caption": new_post.caption,
+        "image_url": new_post.image_url,
+        "created_at": new_post.created_at,
+        "owner": new_post.owner,
+        "likes_count": 0,
+        "comments_count": 0
+    }
 
 
 @router.get("/", response_model=list[schemas.PostResponse])
-def get_posts(db: Session = Depends(get_db)):
-    posts = db.query(models.Post).all()
-    return posts
+def get_posts(
+    db: Session = Depends(get_db)
+):
 
-@router.get("/my-posts", response_model=list[schemas.PostResponse])
-def get_my_posts(
+    posts = db.query(models.Post).options(
+        joinedload(models.Post.owner)
+    ).all()
+
+
+    response = []
+
+    for post in posts:
+
+        response.append({
+            "id": post.id,
+            "caption": post.caption,
+            "image_url": post.image_url,
+            "created_at": post.created_at,
+
+            "owner": post.owner,
+
+            "likes_count": len(post.likes),
+
+            "comments_count": db.query(models.Comment).filter(
+                models.Comment.post_id == post.id
+            ).count()
+        })
+
+
+    return response
+
+@router.get("/feed", response_model=list[schemas.FeedResponse])
+def get_feed(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
-    posts = db.query(models.Post).filter(
-        models.Post.owner_id == current_user.id
+
+    following_users = db.query(models.Follow.following_id).filter(
+        models.Follow.follower_id == current_user.id
     ).all()
 
-    return posts
+
+    following_ids = [
+        user[0] for user in following_users
+    ]
+
+    following_ids.append(current_user.id)
+
+
+    posts = db.query(models.Post).options(
+        joinedload(models.Post.owner)
+    ).filter(
+        models.Post.owner_id.in_(following_ids)
+    ).order_by(
+        models.Post.created_at.desc()
+    ).all()
+
+
+    response = []
+
+    for post in posts:
+        response.append({
+            "id": post.id,
+            "caption": post.caption,
+            "image_url": post.image_url,
+            "created_at": post.created_at,
+            "owner": post.owner,
+            "likes_count": len(post.likes),
+            "comments_count": db.query(models.Comment).filter(
+                models.Comment.post_id == post.id
+            ).count()
+        })
+
+
+    return response
 
 @router.get("/{id}", response_model=schemas.PostResponse)
 def get_post(id: int, db: Session = Depends(get_db)):

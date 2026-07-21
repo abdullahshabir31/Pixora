@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas, oauth2, utils
@@ -96,3 +96,16 @@ def get_user_profile(
         "followers_count": followers_count,
         "following_count": following_count
     }
+
+@router.get("/search", response_model=list[schemas.UserSearchResponse])
+def search_users(
+    username: str,
+    db: Session = Depends(get_db)
+):
+
+    users = db.query(models.User).filter(
+        models.User.username.ilike(f"%{username}%")
+    ).all()
+
+
+    return users
