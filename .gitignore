@@ -1,16 +1,20 @@
 # Backend
-backend/venv/
-backend/__pycache__/
+Backend/venv/
+Backend/__pycache__/
 
 # Environment
 .env
 *.env
 
 # Frontend
-frontend/node_modules/
+Frontend/node_modules/
 
 # Build
 dist/
 
+# Python Cache
 __pycache__/
 *.py[cod]
+
+# VS Code
+.vscode/
