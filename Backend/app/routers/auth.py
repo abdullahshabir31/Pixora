@@ -11,7 +11,7 @@ router = APIRouter(
 )
 
 
-@router.post("/")
+@router.post("/", response_model=schemas.Token)
 def login(
     user_credentials: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
@@ -33,8 +33,8 @@ def login(
         )
 
     access_token = oauth2.create_access_token(
-        data={"user_id": user.id}
-    )
+    data={"sub": str(user.id)}
+)
 
     return {
         "access_token": access_token,

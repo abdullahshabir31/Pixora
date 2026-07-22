@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
 
+
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
@@ -151,3 +152,11 @@ class SavedPostItem(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    id: str | None = None
