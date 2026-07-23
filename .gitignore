@@ -21,3 +21,4 @@ __pycache__/
 
 # Alembic
 alembic/
+alembic.ini
