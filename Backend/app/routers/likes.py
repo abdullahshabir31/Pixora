@@ -52,6 +52,20 @@ def like_post(
     db.refresh(new_like)
 
 
+# Create Like Notification
+    if post.owner_id != current_user.id:
+
+        notification = models.Notification(
+        sender_id=current_user.id,
+        receiver_id=post.owner_id,
+        type="like",
+        message=f"{current_user.username} liked your post"
+    )
+
+    db.add(notification)
+    db.commit()
+
+
     return new_like
 
 @router.delete("/{post_id}/like")

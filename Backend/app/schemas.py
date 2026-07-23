@@ -218,3 +218,16 @@ class MessageResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class NotificationResponse(BaseModel):
+    id: int
+    receiver_id: int
+    sender_id: int
+    type: str
+    post_id: int | None = None
+    message: str
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

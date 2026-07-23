@@ -332,3 +332,53 @@ class Reel(Base):
         "User",
         back_populates="reels"
     )
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    receiver_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    sender_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    type = Column(
+        String,
+        nullable=False
+    )
+    # follow, like, comment, message
+
+    post_id = Column(
+        Integer,
+        ForeignKey("posts.id", ondelete="CASCADE"),
+        nullable=True
+    )
+
+    message = Column(
+        String,
+        nullable=False
+    )
+
+    is_read = Column(
+        Boolean,
+        server_default="FALSE",
+        nullable=False
+    )
+
+    created_at = Column(
+        TIMESTAMP(timezone=True),
+        server_default=text("CURRENT_TIMESTAMP"),
+        nullable=False
+    )

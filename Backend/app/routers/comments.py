@@ -43,6 +43,20 @@ def create_comment(
     db.refresh(new_comment)
 
 
+# Create Comment Notification
+    if post.owner_id != current_user.id:
+
+        notification = models.Notification(
+        sender_id=current_user.id,
+        receiver_id=post.owner_id,
+        type="comment",
+        message=f"{current_user.username} commented on your post"
+    )
+
+    db.add(notification)
+    db.commit()
+
+
     return new_comment
 
 @router.get("/{post_id}/comments",

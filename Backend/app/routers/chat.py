@@ -45,6 +45,18 @@ def send_message(
     db.commit()
     db.refresh(new_message)
 
+    # Create Message Notification
+
+    notification = models.Notification(
+        sender_id=current_user.id,
+        receiver_id=message.receiver_id,
+        type="message",
+        message=f"{current_user.username} sent you a message"
+    )
+
+    db.add(notification)
+    db.commit()
+
 
     return new_message
 

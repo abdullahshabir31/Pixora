@@ -61,6 +61,16 @@ def follow_user(
     db.commit()
     db.refresh(new_follow)
 
+    notification = models.Notification(
+    sender_id=current_user.id,
+    receiver_id=user_id,
+    type="follow",
+    message=f"{current_user.username} started following you"
+)
+
+    db.add(notification)
+    db.commit()
+
 
     return new_follow
 
