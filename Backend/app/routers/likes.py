@@ -2,13 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app import models, schemas, oauth2
+from app import models, oauth2
 
 
 router = APIRouter(
     prefix="/posts",
     tags=["Likes"]
 )
+
 
 @router.post("/{post_id}/like", status_code=status.HTTP_201_CREATED)
 def like_post(
@@ -17,9 +18,11 @@ def like_post(
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
 
+    # Check post exists
     post = db.query(models.Post).filter(
         models.Post.id == post_id
     ).first()
+
 
     if not post:
         raise HTTPException(
@@ -28,6 +31,35 @@ def like_post(
         )
 
 
+    # Check if post owner blocked current user
+    blocked = db.query(models.Block).filter(
+        models.Block.blocker_id == post.owner_id,
+        models.Block.blocked_id == current_user.id
+    ).first()
+
+
+    if blocked:
+        raise HTTPException(
+            status_code=403,
+            detail="You are blocked by this user"
+        )
+
+
+    # Check if current user blocked post owner
+    blocked_by_you = db.query(models.Block).filter(
+        models.Block.blocker_id == current_user.id,
+        models.Block.blocked_id == post.owner_id
+    ).first()
+
+
+    if blocked_by_you:
+        raise HTTPException(
+            status_code=403,
+            detail="You blocked this user"
+        )
+
+
+    # Check already liked
     existing_like = db.query(models.Like).filter(
         models.Like.post_id == post_id,
         models.Like.user_id == current_user.id
@@ -41,6 +73,7 @@ def like_post(
         )
 
 
+    # Create Like
     new_like = models.Like(
         post_id=post_id,
         user_id=current_user.id
@@ -48,25 +81,28 @@ def like_post(
 
 
     db.add(new_like)
+
+
+    # Create Like Notification
+    if post.owner_id != current_user.id:
+
+        notification = models.Notification(
+            sender_id=current_user.id,
+            receiver_id=post.owner_id,
+            type="like",
+            message=f"{current_user.username} liked your post"
+        )
+
+        db.add(notification)
+
+
     db.commit()
     db.refresh(new_like)
 
 
-# Create Like Notification
-    if post.owner_id != current_user.id:
-
-        notification = models.Notification(
-        sender_id=current_user.id,
-        receiver_id=post.owner_id,
-        type="like",
-        message=f"{current_user.username} liked your post"
-    )
-
-    db.add(notification)
-    db.commit()
-
-
     return new_like
+
+
 
 @router.delete("/{post_id}/like")
 def unlike_post(
@@ -95,6 +131,8 @@ def unlike_post(
     return {
         "message": "Post unliked successfully"
     }
+
+
 
 @router.get("/{post_id}/likes")
 def get_post_likes(

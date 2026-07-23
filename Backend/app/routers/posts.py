@@ -53,16 +53,36 @@ def create_post(
 def get_posts(
     skip: int = 0,
     limit: int = 10,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(oauth2.get_current_user)
 ):
 
+    blocked_users = db.query(models.Block.blocked_id).filter(
+        models.Block.blocker_id == current_user.id
+    ).all()
+
+    blocked_by_users = db.query(models.Block.blocker_id).filter(
+        models.Block.blocked_id == current_user.id
+    ).all()
+
+
+    blocked_ids = [
+        user[0] for user in blocked_users
+    ] + [
+        user[0] for user in blocked_by_users
+    ]
+
+
     posts = (
-    db.query(models.Post)
-    .options(joinedload(models.Post.owner))
-    .offset(skip)
-    .limit(limit)
-    .all()
-)
+        db.query(models.Post)
+        .options(joinedload(models.Post.owner))
+        .filter(
+            ~models.Post.owner_id.in_(blocked_ids)
+        )
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
     response = []
@@ -104,30 +124,54 @@ def get_feed(
         user[0] for user in following_users
     ]
 
+
     following_ids.append(current_user.id)
 
 
+    blocked_users = db.query(models.Block.blocked_id).filter(
+        models.Block.blocker_id == current_user.id
+    ).all()
+
+
+    blocked_by_users = db.query(models.Block.blocker_id).filter(
+        models.Block.blocked_id == current_user.id
+    ).all()
+
+
+    blocked_ids = [
+        user[0] for user in blocked_users
+    ] + [
+        user[0] for user in blocked_by_users
+    ]
+
+
     posts = (
-    db.query(models.Post)
-    .options(joinedload(models.Post.owner))
-    .filter(models.Post.owner_id.in_(following_ids))
-    .order_by(models.Post.created_at.desc())
-    .offset(skip)
-    .limit(limit)
-    .all()
-)
+        db.query(models.Post)
+        .options(joinedload(models.Post.owner))
+        .filter(
+            models.Post.owner_id.in_(following_ids),
+            ~models.Post.owner_id.in_(blocked_ids)
+        )
+        .order_by(models.Post.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
     response = []
 
     for post in posts:
+
         response.append({
             "id": post.id,
             "caption": post.caption,
             "image_url": post.image_url,
             "created_at": post.created_at,
             "owner": post.owner,
+
             "likes_count": len(post.likes),
+
             "comments_count": db.query(models.Comment).filter(
                 models.Comment.post_id == post.id
             ).count()

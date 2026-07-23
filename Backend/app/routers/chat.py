@@ -19,9 +19,11 @@ def send_message(
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
 
+    # Check receiver exists
     receiver = db.query(models.User).filter(
         models.User.id == message.receiver_id
     ).first()
+
 
     if not receiver:
         raise HTTPException(
@@ -30,6 +32,35 @@ def send_message(
         )
 
 
+    # Check if receiver blocked current user
+    blocked = db.query(models.Block).filter(
+        models.Block.blocker_id == message.receiver_id,
+        models.Block.blocked_id == current_user.id
+    ).first()
+
+
+    if blocked:
+        raise HTTPException(
+            status_code=403,
+            detail="You are blocked by this user"
+        )
+
+
+    # Check if current user blocked receiver
+    blocked_by_you = db.query(models.Block).filter(
+        models.Block.blocker_id == current_user.id,
+        models.Block.blocked_id == message.receiver_id
+    ).first()
+
+
+    if blocked_by_you:
+        raise HTTPException(
+            status_code=403,
+            detail="You blocked this user"
+        )
+
+
+    # Create Message
     new_message = models.Message(
         sender_id=current_user.id,
         receiver_id=message.receiver_id,
@@ -41,12 +72,7 @@ def send_message(
     )
 
 
-    db.add(new_message)
-    db.commit()
-    db.refresh(new_message)
-
-    # Create Message Notification
-
+    # Create Notification
     notification = models.Notification(
         sender_id=current_user.id,
         receiver_id=message.receiver_id,
@@ -54,8 +80,12 @@ def send_message(
         message=f"{current_user.username} sent you a message"
     )
 
+
+    db.add(new_message)
     db.add(notification)
+
     db.commit()
+    db.refresh(new_message)
 
 
     return new_message
@@ -102,9 +132,11 @@ def send_file_message(
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
 
+    # Check receiver exists
     receiver = db.query(models.User).filter(
         models.User.id == receiver_id
     ).first()
+
 
     if not receiver:
         raise HTTPException(
@@ -113,11 +145,41 @@ def send_file_message(
         )
 
 
+    # Check if receiver blocked current user
+    blocked = db.query(models.Block).filter(
+        models.Block.blocker_id == receiver_id,
+        models.Block.blocked_id == current_user.id
+    ).first()
+
+
+    if blocked:
+        raise HTTPException(
+            status_code=403,
+            detail="You are blocked by this user"
+        )
+
+
+    # Check if current user blocked receiver
+    blocked_by_you = db.query(models.Block).filter(
+        models.Block.blocker_id == current_user.id,
+        models.Block.blocked_id == receiver_id
+    ).first()
+
+
+    if blocked_by_you:
+        raise HTTPException(
+            status_code=403,
+            detail="You blocked this user"
+        )
+
+
+    # Upload File
     upload_result = cloudinary.upload_file(
         file.file
     )
 
 
+    # Detect File Type
     if file.content_type.startswith("image"):
         message_type = "image"
 
@@ -128,6 +190,8 @@ def send_file_message(
         message_type = "document"
 
 
+
+    # Create Message
     new_message = models.Message(
         sender_id=current_user.id,
         receiver_id=receiver_id,
@@ -139,7 +203,18 @@ def send_file_message(
     )
 
 
+    # Create Notification
+    notification = models.Notification(
+        sender_id=current_user.id,
+        receiver_id=receiver_id,
+        type="message",
+        message=f"{current_user.username} sent you a file"
+    )
+
+
     db.add(new_message)
+    db.add(notification)
+
     db.commit()
     db.refresh(new_message)
 

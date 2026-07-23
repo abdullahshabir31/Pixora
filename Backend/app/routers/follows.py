@@ -17,6 +17,7 @@ def follow_user(
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
 
+    # Self follow check
     if user_id == current_user.id:
         raise HTTPException(
             status_code=400,
@@ -24,6 +25,7 @@ def follow_user(
         )
 
 
+    # Check user exists
     user = db.query(models.User).filter(
         models.User.id == user_id
     ).first()
@@ -36,7 +38,35 @@ def follow_user(
         )
 
 
-    # Check already following
+    # Check if receiver blocked current user
+    blocked = db.query(models.Block).filter(
+        models.Block.blocker_id == user_id,
+        models.Block.blocked_id == current_user.id
+    ).first()
+
+
+    if blocked:
+        raise HTTPException(
+            status_code=403,
+            detail="You are blocked by this user"
+        )
+
+
+    # Check if current user blocked receiver
+    blocked_by_you = db.query(models.Block).filter(
+        models.Block.blocker_id == current_user.id,
+        models.Block.blocked_id == user_id
+    ).first()
+
+
+    if blocked_by_you:
+        raise HTTPException(
+            status_code=403,
+            detail="You blocked this user"
+        )
+
+
+    # Already following check
     existing_follow = db.query(models.Follow).filter(
         models.Follow.follower_id == current_user.id,
         models.Follow.following_id == user_id
@@ -69,17 +99,28 @@ def follow_user(
 
         follow_request = models.FollowRequest(
             sender_id=current_user.id,
-            receiver_id=user_id
+            receiver_id=user_id,
+            status="pending"
+        )
+
+
+        notification = models.Notification(
+            sender_id=current_user.id,
+            receiver_id=user_id,
+            type="follow_request",
+            message=f"{current_user.username} sent you a follow request"
         )
 
 
         db.add(follow_request)
+        db.add(notification)
         db.commit()
 
 
         return {
             "message": "Follow request sent"
         }
+
 
 
     # Public Account
@@ -89,12 +130,6 @@ def follow_user(
     )
 
 
-    db.add(new_follow)
-    db.commit()
-    db.refresh(new_follow)
-
-
-    # Follow Notification
     notification = models.Notification(
         sender_id=current_user.id,
         receiver_id=user_id,
@@ -103,8 +138,11 @@ def follow_user(
     )
 
 
+    db.add(new_follow)
     db.add(notification)
+
     db.commit()
+    db.refresh(new_follow)
 
 
     return new_follow

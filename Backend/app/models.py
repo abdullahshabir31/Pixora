@@ -240,6 +240,33 @@ class FollowRequest(Base):
         nullable=False
     )
 
+class Block(Base):
+    __tablename__ = "blocks"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    blocker_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    blocked_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    created_at = Column(
+        TIMESTAMP(timezone=True),
+        server_default=text("CURRENT_TIMESTAMP"),
+        nullable=False
+    )
+
 class SavedPost(Base):
     __tablename__ = "saved_posts"
 

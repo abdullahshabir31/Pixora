@@ -87,7 +87,8 @@ def get_my_profile(
 @router.get("/profile/{user_id}", response_model=schemas.ProfileResponse)
 def get_user_profile(
     user_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(oauth2.get_current_user)
 ):
 
     user = db.query(models.User).filter(
@@ -99,6 +100,34 @@ def get_user_profile(
         raise HTTPException(
             status_code=404,
             detail="User not found"
+        )
+
+
+    # Check if profile owner blocked current user
+    blocked = db.query(models.Block).filter(
+        models.Block.blocker_id == user_id,
+        models.Block.blocked_id == current_user.id
+    ).first()
+
+
+    if blocked:
+        raise HTTPException(
+            status_code=403,
+            detail="You are blocked by this user"
+        )
+
+
+    # Check if current user blocked profile owner
+    blocked_by_you = db.query(models.Block).filter(
+        models.Block.blocker_id == current_user.id,
+        models.Block.blocked_id == user_id
+    ).first()
+
+
+    if blocked_by_you:
+        raise HTTPException(
+            status_code=403,
+            detail="You blocked this user"
         )
 
 
