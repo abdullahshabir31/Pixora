@@ -75,7 +75,7 @@ def get_user_profile(
 
 
     posts_count = db.query(models.Post).filter(
-        models.Post.user_id == user_id
+        models.Post.owner_id == user_id
     ).count()
 
 

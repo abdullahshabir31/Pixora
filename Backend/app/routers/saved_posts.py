@@ -16,7 +16,7 @@ def get_saved_posts(
 ):
 
     saved_posts = db.query(models.SavedPost).filter(
-        models.SavedPost.user_id == current_user.id
+        models.SavedPost.owner_id == current_user.id
     ).all()
 
     return [saved.post for saved in saved_posts]
@@ -45,7 +45,7 @@ def save_post(
 
     # Already saved?
     saved_post = db.query(models.SavedPost).filter(
-        models.SavedPost.user_id == current_user.id,
+        models.SavedPost.owner_id == current_user.id,
         models.SavedPost.post_id == post_id
     ).first()
 
@@ -74,7 +74,7 @@ def unsave_post(
 ):
 
     saved_post = db.query(models.SavedPost).filter(
-        models.SavedPost.user_id == current_user.id,
+        models.SavedPost.owner_id == current_user.id,
         models.SavedPost.post_id == post_id
     ).first()
 

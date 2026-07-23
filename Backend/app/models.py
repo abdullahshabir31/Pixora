@@ -19,6 +19,10 @@ class User(Base):
         server_default=text("CURRENT_TIMESTAMP"),
         nullable=False
     )
+    posts = relationship("Post", back_populates="owner")
+    likes = relationship("Like", back_populates="user")
+    comments = relationship("Comment", back_populates="user")
+    saved_posts = relationship("SavedPost", back_populates="user")
 
 class Post(Base):
     __tablename__ = "posts"
@@ -39,12 +43,25 @@ class Post(Base):
         nullable=False
     )
 
+    owner = relationship("User", back_populates="posts")
+
     likes = relationship(
     "Like",
-    cascade="all, delete",
+    back_populates="post",
+    cascade="all, delete-orphan"
     )
 
-    owner = relationship("User")
+    comments = relationship(
+    "Comment",
+    back_populates="post",
+    cascade="all, delete-orphan"
+    )
+
+    saved_posts = relationship(
+    "SavedPost",
+    back_populates="post",
+    cascade="all, delete-orphan"
+    )
 
 class Like(Base):
     __tablename__ = "likes"
@@ -69,8 +86,8 @@ class Like(Base):
     )
 
 
-    user = relationship("User")
-    post = relationship("Post")
+    user = relationship("User", back_populates="likes")
+    post = relationship("Post", back_populates="likes")
 
 class Comment(Base):
     __tablename__ = "comments"
@@ -97,8 +114,8 @@ class Comment(Base):
     )
 
 
-    user = relationship("User")
-    post = relationship("Post")
+    user = relationship("User", back_populates="comments")
+    post = relationship("Post", back_populates="comments")
 
 class Follow(Base):
     __tablename__ = "follows"
@@ -145,7 +162,6 @@ class SavedPost(Base):
         nullable=False
     )
 
-    user = relationship("User")
-
-    post = relationship("Post")
+    user = relationship("User", back_populates="saved_posts")
+    post = relationship("Post", back_populates="saved_posts")
 
