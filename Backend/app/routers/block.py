@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Path
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -11,20 +11,45 @@ router = APIRouter(
 )
 
 
-@router.post("/{user_id}/block", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{user_id}/block",
+    status_code=status.HTTP_201_CREATED,
+    summary="Block a user",
+    description="""
+Block another Pixora user.
+
+This endpoint allows an authenticated user to block another user.
+Blocked users cannot interact with the current user's content and features.
+
+Returns:
+- Success message after blocking the user.
+
+Requirements:
+- User must be authenticated.
+- Target user must exist.
+- User cannot block themselves.
+
+Errors:
+- User not found.
+- User already blocked.
+"""
+)
 def block_user(
-    user_id: int,
+    user_id: int = Path(
+        ...,
+        title="User ID",
+        description="Unique ID of the user that you want to block.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
-    # Prevent self block
     if user_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You cannot block yourself"
         )
 
-    # Check user exists
     user = db.query(models.User).filter(
         models.User.id == user_id
     ).first()
@@ -35,7 +60,6 @@ def block_user(
             detail="User not found"
         )
 
-    # Already blocked?
     existing_block = db.query(models.Block).filter(
         models.Block.blocker_id == current_user.id,
         models.Block.blocked_id == user_id
@@ -61,9 +85,29 @@ def block_user(
     }
 
 
-@router.delete("/{user_id}/block")
+@router.delete(
+    "/{user_id}/block",
+    summary="Unblock a user",
+    description="""
+Remove a user from the blocked list.
+
+This endpoint allows an authenticated user to unblock a previously blocked user.
+
+Returns:
+- Success message after unblocking.
+
+Requirements:
+- User must be authenticated.
+- Block record must exist.
+"""
+)
 def unblock_user(
-    user_id: int,
+    user_id: int = Path(
+        ...,
+        title="User ID",
+        description="Unique ID of the user that you want to unblock.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -86,7 +130,20 @@ def unblock_user(
     }
 
 
-@router.get("/me/blocked-users")
+@router.get(
+    "/me/blocked-users",
+    summary="Get blocked users",
+    description="""
+Retrieve all users blocked by the authenticated user.
+
+Returns:
+- Total number of blocked users.
+- List of blocked users.
+
+Requirements:
+- User must be authenticated.
+"""
+)
 def get_blocked_users(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
