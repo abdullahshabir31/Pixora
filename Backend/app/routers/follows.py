@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Path
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -11,9 +11,39 @@ router = APIRouter(
 )
 
 
-@router.post("/{user_id}/follow", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{user_id}/follow",
+    status_code=status.HTTP_201_CREATED,
+    summary="Follow a user",
+    description="""
+Follow another user on Pixora.
+
+This endpoint allows an authenticated user to follow another user.
+For private accounts, a follow request is created and the user must approve it.
+For public accounts, the follow relationship is created immediately.
+
+Returns:
+- Follow information for public accounts.
+- Follow request message for private accounts.
+
+Requirements:
+- User must be authenticated.
+- Target user must exist.
+- User cannot follow themselves.
+- User must not be blocked by the target user.
+- User must not have blocked the target user.
+
+Notifications:
+- A notification is created when a follow or follow request is sent.
+"""
+)
 def follow_user(
-    user_id: int,
+    user_id: int = Path(
+        ...,
+        title="User ID",
+        description="Unique ID of the user you want to follow.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -127,7 +157,23 @@ def follow_user(
 
     return new_follow
 
-@router.get("/follow-requests")
+
+@router.get(
+    "/follow-requests",
+    summary="Get follow requests",
+    description="""
+Retrieve pending follow requests for the authenticated user on Pixora.
+
+This endpoint returns all users who have requested to follow the current user's private account.
+
+Returns:
+- List of pending follow requests.
+
+Requirements:
+- User must be authenticated.
+- Only pending requests are returned.
+"""
+)
 def get_follow_requests(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
@@ -140,9 +186,31 @@ def get_follow_requests(
     return requests
 
 
-@router.put("/follow-requests/{request_id}/accept")
+@router.put(
+    "/follow-requests/{request_id}/accept",
+    summary="Accept follow request",
+    description="""
+Accept a pending follow request on Pixora.
+
+This endpoint allows an authenticated user to accept a follow request.
+After acceptance, a follow relationship is created between both users and a notification is sent.
+
+Returns:
+- Success message after accepting the follow request.
+
+Requirements:
+- User must be authenticated.
+- Follow request must exist.
+- Follow request must belong to the current user.
+"""
+)
 def accept_follow_request(
-    request_id: int,
+    request_id: int = Path(
+        ...,
+        title="Follow Request ID",
+        description="Unique ID of the follow request that you want to accept.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -181,9 +249,31 @@ def accept_follow_request(
     }
 
 
-@router.put("/follow-requests/{request_id}/reject")
+@router.put(
+    "/follow-requests/{request_id}/reject",
+    summary="Reject follow request",
+    description="""
+Reject a pending follow request on Pixora.
+
+This endpoint allows an authenticated user to decline a follow request.
+The follow request status is updated to rejected.
+
+Returns:
+- Success message after rejecting the follow request.
+
+Requirements:
+- User must be authenticated.
+- Follow request must exist.
+- Follow request must belong to the current user.
+"""
+)
 def reject_follow_request(
-    request_id: int,
+    request_id: int = Path(
+        ...,
+        title="Follow Request ID",
+        description="Unique ID of the follow request that you want to reject.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -207,9 +297,30 @@ def reject_follow_request(
     }
 
 
-@router.delete("/{user_id}/follow")
+@router.delete(
+    "/{user_id}/follow",
+    summary="Unfollow a user",
+    description="""
+Remove an existing follow relationship on Pixora.
+
+This endpoint allows an authenticated user to unfollow another user.
+
+Returns:
+- Success message after unfollowing the user.
+
+Requirements:
+- User must be authenticated.
+- Follow relationship must exist.
+- User can only remove their own follow relationship.
+"""
+)
 def unfollow_user(
-    user_id: int,
+    user_id: int = Path(
+        ...,
+        title="User ID",
+        description="Unique ID of the user that you want to unfollow.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -232,9 +343,29 @@ def unfollow_user(
     }
 
 
-@router.get("/{user_id}/followers")
+@router.get(
+    "/{user_id}/followers",
+    summary="Get user followers",
+    description="""
+Retrieve all followers of a Pixora user.
+
+This endpoint returns the list of users who are following the specified user.
+
+Returns:
+- Total followers count
+- List of followers
+
+Requirements:
+- A valid user ID is required.
+"""
+)
 def get_followers(
-    user_id: int,
+    user_id: int = Path(
+        ...,
+        title="User ID",
+        description="Unique ID of the user whose followers you want to retrieve.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db)
 ):
     followers = db.query(models.Follow).filter(
@@ -247,9 +378,29 @@ def get_followers(
     }
 
 
-@router.get("/{user_id}/following")
+@router.get(
+    "/{user_id}/following",
+    summary="Get users followed by a user",
+    description="""
+Retrieve all users followed by a Pixora user.
+
+This endpoint returns the list of users that the specified user is following.
+
+Returns:
+- Total following count
+- List of followed users
+
+Requirements:
+- A valid user ID is required.
+"""
+)
 def get_following(
-    user_id: int,
+    user_id: int = Path(
+        ...,
+        title="User ID",
+        description="Unique ID of the user whose following list you want to retrieve.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db)
 ):
     following = db.query(models.Follow).filter(
