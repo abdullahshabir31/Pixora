@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Path
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
@@ -12,7 +12,28 @@ router = APIRouter(
 )
 
 
-@router.post("/send", response_model=schemas.MessageResponse)
+@router.post(
+    "/send",
+    response_model=schemas.MessageResponse,
+    summary="Send a message",
+    description="""
+Send a text message to another Pixora user.
+
+This endpoint allows an authenticated user to send a direct message to another user.
+A notification is created for the receiver after sending the message.
+
+Returns:
+- Message information
+- Sender details
+- Receiver details
+- Message content
+
+Requirements:
+- User must be authenticated.
+- Receiver must exist.
+- Users must not block each other.
+"""
+)
 def send_message(
     message: schemas.MessageCreate,
     db: Session = Depends(get_db),
@@ -29,7 +50,6 @@ def send_message(
             detail="Receiver not found"
         )
 
-    # Check if receiver blocked current user
     blocked = db.query(models.Block).filter(
         models.Block.blocker_id == message.receiver_id,
         models.Block.blocked_id == current_user.id
@@ -41,7 +61,6 @@ def send_message(
             detail="You are blocked by this user"
         )
 
-    # Check if current user blocked receiver
     blocked_by_you = db.query(models.Block).filter(
         models.Block.blocker_id == current_user.id,
         models.Block.blocked_id == message.receiver_id
@@ -53,7 +72,6 @@ def send_message(
             detail="You blocked this user"
         )
 
-    # Create message
     new_message = models.Message(
         sender_id=current_user.id,
         receiver_id=message.receiver_id,
@@ -64,7 +82,6 @@ def send_message(
         file_size=message.file_size
     )
 
-    # Create notification
     notification = models.Notification(
         sender_id=current_user.id,
         receiver_id=message.receiver_id,
@@ -81,9 +98,33 @@ def send_message(
     return new_message
 
 
-@router.get("/{user_id}", response_model=list[schemas.MessageResponse])
+@router.get(
+    "/{user_id}",
+    response_model=list[schemas.MessageResponse],
+    summary="Get conversation",
+    description="""
+Retrieve conversation messages between the authenticated user and another user.
+
+This endpoint returns all messages exchanged between two users.
+Received messages are automatically marked as seen.
+
+Returns:
+- List of messages
+- Message details
+- Sender and receiver information
+
+Requirements:
+- User must be authenticated.
+- A valid user ID is required.
+"""
+)
 def get_conversation(
-    user_id: int,
+    user_id: int = Path(
+        ...,
+        title="User ID",
+        description="Unique ID of the user whose conversation you want to retrieve.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -102,7 +143,6 @@ def get_conversation(
         models.Message.created_at
     ).all()
 
-    # Mark received messages as seen
     for message in messages:
         if message.receiver_id == current_user.id:
             message.is_seen = True
@@ -111,14 +151,39 @@ def get_conversation(
 
     return messages
 
-@router.post("/send-file", response_model=schemas.MessageResponse)
+
+@router.post(
+    "/send-file",
+    response_model=schemas.MessageResponse,
+    summary="Send file message",
+    description="""
+Send a file message to another Pixora user.
+
+This endpoint allows users to upload and send files including images, videos, and documents.
+
+Returns:
+- Message information
+- Uploaded file details
+- File URL
+
+Requirements:
+- User must be authenticated.
+- Receiver must exist.
+- File upload is required.
+- Users must not block each other.
+
+Supported files:
+- Images
+- Videos
+- Documents
+"""
+)
 def send_file_message(
     receiver_id: int,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
-    # Check receiver exists
     receiver = db.query(models.User).filter(
         models.User.id == receiver_id
     ).first()
@@ -129,7 +194,6 @@ def send_file_message(
             detail="Receiver not found"
         )
 
-    # Check if receiver blocked current user
     blocked = db.query(models.Block).filter(
         models.Block.blocker_id == receiver_id,
         models.Block.blocked_id == current_user.id
@@ -141,7 +205,6 @@ def send_file_message(
             detail="You are blocked by this user"
         )
 
-    # Check if current user blocked receiver
     blocked_by_you = db.query(models.Block).filter(
         models.Block.blocker_id == current_user.id,
         models.Block.blocked_id == receiver_id
@@ -153,10 +216,8 @@ def send_file_message(
             detail="You blocked this user"
         )
 
-    # Upload file
     upload_result = cloudinary.upload_file(file.file)
 
-    # Detect message type
     if file.content_type.startswith("image"):
         message_type = "image"
     elif file.content_type.startswith("video"):
@@ -164,7 +225,6 @@ def send_file_message(
     else:
         message_type = "document"
 
-    # Create message
     new_message = models.Message(
         sender_id=current_user.id,
         receiver_id=receiver_id,
@@ -175,7 +235,6 @@ def send_file_message(
         file_size=upload_result["size"]
     )
 
-    # Create notification
     notification = models.Notification(
         sender_id=current_user.id,
         receiver_id=receiver_id,
@@ -192,7 +251,19 @@ def send_file_message(
     return new_message
 
 
-@router.get("/unread/count")
+@router.get(
+    "/unread/count",
+    summary="Get unread messages count",
+    description="""
+Retrieve the number of unread messages for the authenticated user.
+
+Returns:
+- Total unread messages count
+
+Requirements:
+- User must be authenticated.
+"""
+)
 def unread_messages_count(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
@@ -207,9 +278,31 @@ def unread_messages_count(
     }
 
 
-@router.delete("/message/{message_id}")
+@router.delete(
+    "/message/{message_id}",
+    summary="Unsend a message",
+    description="""
+Remove a sent message from Pixora.
+
+This endpoint allows a user to unsend their own message.
+The message content is replaced and attached files are removed.
+
+Returns:
+- Success message after unsending.
+
+Requirements:
+- User must be authenticated.
+- Message must exist.
+- User can only unsend their own messages.
+"""
+)
 def unsend_message(
-    message_id: int,
+    message_id: int = Path(
+        ...,
+        title="Message ID",
+        description="Unique ID of the message that you want to unsend.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
