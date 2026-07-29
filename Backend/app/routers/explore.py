@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -14,10 +14,30 @@ router = APIRouter(
 
 @router.get(
     "/users",
-    response_model=list[schemas.UserSearchResponse]
+    response_model=list[schemas.UserSearchResponse],
+    summary="Search users",
+    description="""
+Search Pixora users by username or email.
+
+This endpoint allows authenticated users to discover other users.
+Blocked users are automatically excluded from search results.
+
+Returns:
+- Matching users
+- Public user information
+
+Requirements:
+- User must be authenticated.
+- Search query is required.
+"""
 )
 def search_users(
-    q: str,
+    q: str = Query(
+        ...,
+        title="Search Query",
+        description="Username or email keyword to search for users.",
+        examples=["abdullah"]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -48,10 +68,32 @@ def search_users(
 
 @router.get(
     "/posts",
-    response_model=list[schemas.PostResponse]
+    response_model=list[schemas.PostResponse],
+    summary="Search posts",
+    description="""
+Search Pixora posts by caption.
+
+This endpoint searches posts using caption keywords.
+Posts from blocked users are automatically excluded.
+
+Returns:
+- Matching posts
+- Post owner information
+- Likes count
+- Comments count
+
+Requirements:
+- User must be authenticated.
+- Search query is required.
+"""
 )
 def search_posts(
-    q: str,
+    q: str = Query(
+        ...,
+        title="Search Query",
+        description="Keyword to search inside post captions.",
+        examples=["travel"]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -92,11 +134,41 @@ def search_posts(
 
 @router.get(
     "/",
-    response_model=list[schemas.PostResponse]
+    response_model=list[schemas.PostResponse],
+    summary="Explore posts",
+    description="""
+Retrieve public posts for the Explore section.
+
+This endpoint returns latest posts from Pixora users.
+Posts from blocked users are excluded automatically.
+
+Returns:
+- List of explore posts
+- Post owner information
+- Likes count
+- Comments count
+
+Requirements:
+- User must be authenticated.
+
+Pagination:
+- skip: Number of posts to skip.
+- limit: Maximum number of posts to return.
+"""
 )
 def explore_posts(
-    skip: int = 0,
-    limit: int = 20,
+    skip: int = Query(
+        0,
+        title="Skip",
+        description="Number of posts to skip for pagination.",
+        examples=[0]
+    ),
+    limit: int = Query(
+        20,
+        title="Limit",
+        description="Maximum number of posts to retrieve.",
+        examples=[20]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
