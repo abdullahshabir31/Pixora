@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Path
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
@@ -13,7 +13,22 @@ router = APIRouter(
 
 @router.get(
     "/saved-posts",
-    response_model=list[schemas.SavedPostItem]
+    response_model=list[schemas.SavedPostItem],
+    summary="Get saved posts",
+    description="""
+Retrieve all posts saved by the authenticated user on Pixora.
+
+This endpoint returns the list of posts that the current user has saved for later viewing.
+
+Returns:
+- List of saved posts
+- Post information
+- Related post details
+
+Requirements:
+- User must be authenticated.
+- Only the current user's saved posts are returned.
+"""
 )
 def get_saved_posts(
     db: Session = Depends(get_db),
@@ -33,10 +48,29 @@ def get_saved_posts(
 @router.post(
     "/saved-posts/{post_id}",
     response_model=schemas.SavedPostResponse,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
+    summary="Save a post",
+    description="""
+Save a post on Pixora.
+
+This endpoint allows an authenticated user to save a post for later access.
+
+Returns:
+- Saved post information
+
+Requirements:
+- User must be authenticated.
+- Post must exist.
+- The same post cannot be saved multiple times by the same user.
+"""
 )
 def save_post(
-    post_id: int,
+    post_id: int = Path(
+        ...,
+        title="Post ID",
+        description="Unique ID of the post that you want to save.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -78,10 +112,28 @@ def save_post(
 
 @router.delete(
     "/saved-posts/{post_id}",
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remove saved post",
+    description="""
+Remove a saved post from Pixora.
+
+This endpoint allows an authenticated user to remove a post from their saved posts list.
+
+Returns:
+- No content is returned after successful removal.
+
+Requirements:
+- User must be authenticated.
+- Saved post must exist.
+"""
 )
 def unsave_post(
-    post_id: int,
+    post_id: int = Path(
+        ...,
+        title="Post ID",
+        description="Unique ID of the post that you want to remove from saved posts.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
