@@ -23,7 +23,30 @@ router = APIRouter(
 @router.post(
     "/",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UserResponse
+    response_model=schemas.UserResponse,
+    summary="Create User",
+    description="""
+Register a new user account.
+
+This endpoint creates a new Pixora account.
+
+### Required Information
+- Username
+- Email
+- Password
+
+### Optional Information
+- Full Name
+- Bio
+- Website
+- Gender
+- Date of Birth
+
+The password is securely hashed before storing it in the database.
+
+Usernames and email addresses must be unique.
+""",
+    response_description="User account created successfully."
 )
 def create_user(
     user: schemas.UserCreate,
@@ -70,7 +93,27 @@ def create_user(
     return new_user
 
 
-@router.get("/me", response_model=schemas.ProfileResponse)
+@router.get(
+    "/me",
+    response_model=schemas.ProfileResponse,
+    summary="Get My Profile",
+    description="""
+Retrieve the profile of the currently authenticated user.
+
+Returns:
+
+- User ID
+- Username
+- Email
+- Total Posts
+- Followers Count
+- Following Count
+- Privacy Status
+
+Requires a valid JWT access token.
+""",
+    response_description="Authenticated user's profile."
+)
 def get_my_profile(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
@@ -99,7 +142,26 @@ def get_my_profile(
     }
 
 
-@router.get("/profile/{user_id}", response_model=schemas.ProfileResponse)
+@router.get(
+    "/profile/{user_id}",
+    response_model=schemas.ProfileResponse,
+    summary="Get User Profile",
+    description="""
+Retrieve the public profile of another user.
+
+This endpoint returns:
+
+- Username
+- Email
+- Posts Count
+- Followers Count
+- Following Count
+- Privacy Status
+
+Access is denied if either user has blocked the other.
+""",
+    response_description="Requested user's profile."
+)
 def get_user_profile(
     user_id: int,
     db: Session = Depends(get_db),
@@ -160,7 +222,29 @@ def get_user_profile(
         "is_private": user.is_private
     }
 
-@router.get("/search", response_model=list[schemas.UserSearchResponse])
+@router.get(
+    "/search",
+    response_model=list[schemas.UserSearchResponse],
+    summary="Search Users",
+    description="""
+Search users by username.
+
+Supports partial matching.
+
+Example:
+
+john
+
+will return:
+
+john123
+
+john_doe
+
+realjohn
+""",
+    response_description="List of matching users."
+)
 def search_users(
     username: str,
     db: Session = Depends(get_db)
@@ -176,7 +260,28 @@ def search_users(
     return users
 
 
-@router.put("/me", response_model=schemas.UserResponse)
+@router.put(
+    "/me",
+    response_model=schemas.UserResponse,
+    summary="Update Profile",
+    description="""
+Update the authenticated user's profile.
+
+You can update:
+
+- Username
+- Full Name
+- Bio
+- Website
+- Gender
+- Date of Birth
+- Privacy Status
+- Profile Picture
+
+Profile images are uploaded to Cloudinary.
+""",
+    response_description="Profile updated successfully."
+)
 def update_profile(
     username: str | None = Form(None),
     full_name: str | None = Form(None),
@@ -232,7 +337,18 @@ def update_profile(
     return current_user
 
 
-@router.put("/change-password")
+@router.put(
+    "/change-password",
+    summary="Change Password",
+    description="""
+Change the password of the authenticated user.
+
+The current password must be correct before a new password can be set.
+
+Passwords are securely hashed before being stored.
+""",
+    response_description="Password changed successfully."
+)
 def change_password(
     passwords: schemas.ChangePassword,
     db: Session = Depends(get_db),
