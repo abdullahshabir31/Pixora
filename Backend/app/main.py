@@ -17,17 +17,41 @@ from app.routers import (
     block
 )
 
-
 app = FastAPI(
     title="Pixora API",
     version="1.0.0",
-    description="Backend API for Pixora Social Platform"
+    description="""
+## Welcome to Pixora API
+
+Pixora API powers the Pixora social media platform.
+
+Using this API, you can:
+
+- 👤 Register and manage user accounts
+- 🔐 Authenticate users with JWT
+- 🖼️ Create and manage posts
+- ❤️ Like and unlike posts
+- 💬 Comment on posts
+- 👥 Follow and unfollow users
+- 🔖 Save and unsave posts
+- 📸 Share Stories
+- 🎬 Upload Reels
+- 💬 Send Chat Messages
+- 🔔 Manage Notifications
+- 🔍 Explore users and posts
+- 🚫 Block and unblock users
+
+Each endpoint includes its own documentation, request parameters, and response models.
+
+Built with FastAPI and PostgreSQL.
+""",
+    contact={
+        "name": "Abdullah",
+        "url": "https://github.com/abdullahshabir31",
+    },
 )
 
-
 # Using Alembic for database migrations
-# Base.metadata.create_all(bind=engine)
-
 
 # Routers
 app.include_router(users.router)
@@ -45,9 +69,13 @@ app.include_router(explore.router)
 app.include_router(block.router)
 
 
-@app.get("/")
+@app.get(
+    "/",
+    summary="API Status",
+    description="Returns the current status of the Pixora API and the connected database.",
+    response_description="API status information."
+)
 def root():
-
     return {
         "message": "Welcome to Pixora API 🚀",
         "database": settings.database_name
