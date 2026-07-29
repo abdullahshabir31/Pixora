@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Path
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -14,11 +14,34 @@ router = APIRouter(
 @router.post(
     "/{post_id}/comments",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.CommentResponse
+    response_model=schemas.CommentResponse,
+    summary="Create a comment",
+    description="""
+Create a new comment on a Pixora post.
+
+This endpoint allows an authenticated user to add a comment on an existing post.
+A notification is created for the post owner when another user comments on their post.
+
+Returns:
+- Comment information
+- Comment owner details
+- Related post information
+
+Requirements:
+- User must be authenticated.
+- Post must exist.
+- User must not be blocked by the post owner.
+- User must not have blocked the post owner.
+"""
 )
 def create_comment(
-    post_id: int,
     comment: schemas.CommentCreate,
+    post_id: int = Path(
+        ...,
+        title="Post ID",
+        description="Unique ID of the post where you want to add a comment.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -85,10 +108,29 @@ def create_comment(
 
 @router.get(
     "/{post_id}/comments",
-    response_model=list[schemas.CommentResponse]
+    response_model=list[schemas.CommentResponse],
+    summary="Get post comments",
+    description="""
+Retrieve all comments of a specific Pixora post.
+
+This endpoint fetches all comments associated with a post and returns them in chronological order.
+
+Returns:
+- List of comments
+- Comment information
+- Comment owner details
+
+Requirements:
+- A valid post ID is required.
+"""
 )
 def get_comments(
-    post_id: int,
+    post_id: int = Path(
+        ...,
+        title="Post ID",
+        description="Unique ID of the post whose comments you want to retrieve.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db)
 ):
     comments = (
@@ -103,10 +145,33 @@ def get_comments(
 
 @router.delete(
     "/comments/{comment_id}",
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    summary="Delete a comment",
+    description="""
+Delete a comment from Pixora.
+
+This endpoint allows an authenticated user to remove their own comment from a post.
+
+Returns:
+- Success message after deleting the comment.
+
+Requirements:
+- User must be authenticated.
+- Comment must exist.
+- Only the comment owner can delete the comment.
+
+Access is denied if:
+- The comment does not exist.
+- The authenticated user is not the owner of the comment.
+"""
 )
 def delete_comment(
-    comment_id: int,
+    comment_id: int = Path(
+        ...,
+        title="Comment ID",
+        description="Unique ID of the comment that you want to delete.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
