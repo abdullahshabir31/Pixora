@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Path
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -11,9 +11,34 @@ router = APIRouter(
 )
 
 
-@router.post("/{post_id}/like", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{post_id}/like",
+    status_code=status.HTTP_201_CREATED,
+    summary="Like a post",
+    description="""
+Like a post on Pixora.
+
+This endpoint allows an authenticated user to like another user's post.
+A notification is created for the post owner when someone likes their post.
+
+Returns:
+- Like information
+
+Requirements:
+- User must be authenticated.
+- Post must exist.
+- User must not be blocked by the post owner.
+- User must not have blocked the post owner.
+- Post cannot be liked more than once by the same user.
+"""
+)
 def like_post(
-    post_id: int,
+    post_id: int = Path(
+        ...,
+        title="Post ID",
+        description="Unique ID of the post that you want to like.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -85,9 +110,29 @@ def like_post(
     return new_like
 
 
-@router.delete("/{post_id}/like")
+@router.delete(
+    "/{post_id}/like",
+    summary="Unlike a post",
+    description="""
+Remove a like from a post on Pixora.
+
+This endpoint allows an authenticated user to remove their existing like from a post.
+
+Returns:
+- Success message after removing the like.
+
+Requirements:
+- User must be authenticated.
+- Like must already exist.
+"""
+)
 def unlike_post(
-    post_id: int,
+    post_id: int = Path(
+        ...,
+        title="Post ID",
+        description="Unique ID of the post from which you want to remove your like.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -110,9 +155,29 @@ def unlike_post(
     }
 
 
-@router.get("/{post_id}/likes")
+@router.get(
+    "/{post_id}/likes",
+    summary="Get post likes",
+    description="""
+Retrieve all likes for a specific post on Pixora.
+
+This endpoint returns the total number of likes and the users who liked the post.
+
+Returns:
+- Total likes count
+- List of likes information
+
+Requirements:
+- A valid post ID is required.
+"""
+)
 def get_post_likes(
-    post_id: int,
+    post_id: int = Path(
+        ...,
+        title="Post ID",
+        description="Unique ID of the post whose likes you want to retrieve.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db)
 ):
     likes = db.query(models.Like).filter(
