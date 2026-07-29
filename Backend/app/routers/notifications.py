@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Path
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -11,7 +11,26 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[schemas.NotificationResponse])
+@router.get(
+    "/",
+    response_model=list[schemas.NotificationResponse],
+    summary="Get notifications",
+    description="""
+Retrieve all notifications for the authenticated user on Pixora.
+
+This endpoint returns all notifications received by the current user,
+sorted from newest to oldest.
+
+Returns:
+- List of notifications
+- Notification details
+- Sender information
+- Notification type and message
+
+Requirements:
+- User must be authenticated.
+"""
+)
 def get_notifications(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
@@ -25,7 +44,19 @@ def get_notifications(
     return notifications
 
 
-@router.get("/unread/count")
+@router.get(
+    "/unread/count",
+    summary="Get unread notifications count",
+    description="""
+Retrieve the total number of unread notifications for the authenticated user.
+
+Returns:
+- Total unread notifications count
+
+Requirements:
+- User must be authenticated.
+"""
+)
 def unread_notifications_count(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
@@ -40,9 +71,30 @@ def unread_notifications_count(
     }
 
 
-@router.put("/read/{notification_id}")
+@router.put(
+    "/read/{notification_id}",
+    summary="Mark notification as read",
+    description="""
+Mark a specific notification as read on Pixora.
+
+This endpoint updates the notification status from unread to read.
+
+Returns:
+- Success message after updating notification status.
+
+Requirements:
+- User must be authenticated.
+- Notification must exist.
+- Notification must belong to the current user.
+"""
+)
 def mark_as_read(
-    notification_id: int,
+    notification_id: int = Path(
+        ...,
+        title="Notification ID",
+        description="Unique ID of the notification that you want to mark as read.",
+        examples=[1]
+    ),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -66,7 +118,21 @@ def mark_as_read(
     }
 
 
-@router.put("/read-all")
+@router.put(
+    "/read-all",
+    summary="Mark all notifications as read",
+    description="""
+Mark all unread notifications as read for the authenticated user.
+
+This endpoint updates all unread notifications of the current user.
+
+Returns:
+- Success message after updating notifications.
+
+Requirements:
+- User must be authenticated.
+"""
+)
 def mark_all_as_read(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
