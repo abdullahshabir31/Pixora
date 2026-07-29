@@ -37,7 +37,6 @@ This endpoint creates a new account using the provided user information.
 
 The password is securely hashed before being stored.
 """,
-    response_description="User account created successfully."
 )
 def create_user(
     user: schemas.UserCreate,
@@ -101,7 +100,6 @@ Retrieve the profile information of the currently authenticated user.
 
 Requires a valid JWT access token.
 """,
-    response_description="Authenticated user's profile returned successfully."
 )
 def get_my_profile(
     db: Session = Depends(get_db),
@@ -147,7 +145,6 @@ Retrieve the public profile information of another Pixora user.
 
 Access is denied if either user has blocked the other.
 """,
-    response_description="User profile returned successfully."
 )
 def get_user_profile(
     user_id: int = Path(
@@ -225,7 +222,6 @@ Supports partial username matching and returns matching user profiles.
 
 Authentication is required.
 """,
-    response_description="Matching users returned successfully."
 )
 def search_users(
     username: str = Query(
@@ -267,7 +263,6 @@ You can update:
 
 Profile images are uploaded to Cloudinary.
 """,
-    response_description="Profile updated successfully."
 )
 def update_profile(
     username: str | None = Form(
@@ -364,7 +359,6 @@ The current password must be correct before a new password can be set.
 
 Passwords are securely hashed before being stored.
 """,
-    response_description="Password changed successfully."
 )
 def change_password(
     passwords: schemas.ChangePassword,
