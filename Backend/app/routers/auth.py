@@ -12,7 +12,28 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=schemas.Token)
+@router.post(
+    "/",
+    response_model=schemas.Token,
+    summary="User login",
+    description="""
+Authenticate a user and generate an access token for Pixora.
+
+This endpoint verifies user credentials using email and password.
+If the credentials are valid, a JWT access token is generated and returned for authentication.
+
+Returns:
+- Access token
+- Token type
+
+Requirements:
+- Valid email address is required.
+- Valid password is required.
+- User account must exist.
+
+The generated access token must be included in future authenticated API requests.
+"""
+)
 def login(
     user_credentials: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
