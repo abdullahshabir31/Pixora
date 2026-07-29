@@ -8,7 +8,7 @@ from fastapi import (
     Form,
 )
 from sqlalchemy.orm import Session
-
+from fastapi import Path, Query
 from app import cloudinary, models, oauth2, schemas, utils
 from app.database import get_db
 from datetime import date, datetime
@@ -26,25 +26,16 @@ router = APIRouter(
     response_model=schemas.UserResponse,
     summary="Create User",
     description="""
-Register a new user account.
+Register a new user account on Pixora.
 
-This endpoint creates a new Pixora account.
+This endpoint creates a new account using the provided user information.
 
-### Required Information
-- Username
-- Email
-- Password
+### Requirements
+- Unique username
+- Unique email address
+- Valid password
 
-### Optional Information
-- Full Name
-- Bio
-- Website
-- Gender
-- Date of Birth
-
-The password is securely hashed before storing it in the database.
-
-Usernames and email addresses must be unique.
+The password is securely hashed before being stored.
 """,
     response_description="User account created successfully."
 )
@@ -98,21 +89,19 @@ def create_user(
     response_model=schemas.ProfileResponse,
     summary="Get My Profile",
     description="""
-Retrieve the profile of the currently authenticated user.
+Retrieve the profile information of the currently authenticated user.
 
-Returns:
-
-- User ID
-- Username
-- Email
-- Total Posts
-- Followers Count
-- Following Count
-- Privacy Status
+### Returns
+- Personal information
+- Profile details
+- Followers count
+- Following count
+- Total posts
+- Privacy status
 
 Requires a valid JWT access token.
 """,
-    response_description="Authenticated user's profile."
+    response_description="Authenticated user's profile returned successfully."
 )
 def get_my_profile(
     db: Session = Depends(get_db),
@@ -147,23 +136,26 @@ def get_my_profile(
     response_model=schemas.ProfileResponse,
     summary="Get User Profile",
     description="""
-Retrieve the public profile of another user.
+Retrieve the public profile information of another Pixora user.
 
-This endpoint returns:
-
-- Username
-- Email
-- Posts Count
-- Followers Count
-- Following Count
-- Privacy Status
+### Returns
+- User information
+- Followers count
+- Following count
+- Total posts
+- Privacy status
 
 Access is denied if either user has blocked the other.
 """,
-    response_description="Requested user's profile."
+    response_description="User profile returned successfully."
 )
 def get_user_profile(
-    user_id: int,
+    user_id: int = Path(
+    ...,
+    title="User ID",
+    description="Unique ID of the user whose profile you want to retrieve.",
+    examples=[1]
+),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
@@ -227,26 +219,21 @@ def get_user_profile(
     response_model=list[schemas.UserSearchResponse],
     summary="Search Users",
     description="""
-Search users by username.
+Search Pixora users by username.
 
-Supports partial matching.
+Supports partial username matching and returns matching user profiles.
 
-Example:
-
-john
-
-will return:
-
-john123
-
-john_doe
-
-realjohn
+Authentication is required.
 """,
-    response_description="List of matching users."
+    response_description="Matching users returned successfully."
 )
 def search_users(
-    username: str,
+    username: str = Query(
+    ...,
+    title="Username",
+    description="Enter the username or part of a username to search.",
+    examples=["abdullah"]
+),
     db: Session = Depends(get_db)
 ):
 
@@ -283,14 +270,44 @@ Profile images are uploaded to Cloudinary.
     response_description="Profile updated successfully."
 )
 def update_profile(
-    username: str | None = Form(None),
-    full_name: str | None = Form(None),
-    bio: str | None = Form(None),
-    website: str | None = Form(None),
-    gender: str | None = Form(None),
-    date_of_birth: date | None = Form(None),
-    is_private: bool | None = Form(None),
-    profile_image: UploadFile | None = File(None),
+    username: str | None = Form(
+    None,
+    description="Update your username.",
+    examples=["abdullah31"]
+),
+    full_name: str | None = Form(
+    None,
+    description="Update your full name.",
+    examples=["Abdullah Shabir"]
+),
+    bio: str | None = Form(
+    None,
+    description="Update your profile bio.",
+    examples=["Full Stack Web Developer"]
+),
+    website: str | None = Form(
+    None,
+    description="Personal or portfolio website.",
+    examples=["https://abdullah.dev"]
+),
+    gender: str | None = Form(
+    None,
+    description="Gender.",
+    examples=["Male"]
+),
+    date_of_birth: date | None = Form(
+    None,
+    description="Date of birth.",
+    examples=["2003-05-15"]
+),
+    is_private: bool | None = Form(
+    None,
+    description="Enable or disable private account."
+),
+    profile_image: UploadFile | None = File(
+    None,
+    description="Upload a new profile picture."
+),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
