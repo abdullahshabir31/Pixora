@@ -1,10 +1,21 @@
-// Story endpoints — placeholders to be wired up against the FastAPI backend.
 import { api } from "./api";
 
 export const StoriesAPI = {
-  feed: () => api.get("/stories/feed"),
-  get: (id) => api.get(`/stories/${id}`),
-  create: (data) => api.post("/stories", data),
+  // Get all active (non-expired) stories
+  feed: () => api.get("/stories/"),
+
+  // Get a specific user's active stories
+  byUser: (userId) => api.get(`/stories/user/${userId}`),
+
+  // Upload a new story (image)
+  create: (formData) =>
+    api.post("/stories/", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
+
+  // Delete a story
   remove: (id) => api.delete(`/stories/${id}`),
 };
 
