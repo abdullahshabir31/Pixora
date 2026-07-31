@@ -5,7 +5,10 @@ export const UsersAPI = {
   search: (q) => api.get("/users/search", { params: { q } }),
   profile: (username) => api.get(`/users/${username}`),
   getById: (id) => api.get(`/users/profile/${id}`),
-  update: (data) => api.patch("/users/me", data),
+  update: (formData) =>
+    api.put("/users/me", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
   followers: (username) => api.get(`/users/${username}/followers`),
   following: (username) => api.get(`/users/${username}/following`),
   follow: (username) => api.post(`/users/${username}/follow`),
