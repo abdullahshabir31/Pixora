@@ -19,6 +19,9 @@ export const PostsAPI = {
   // Single Post
   get: (id) => api.get(`/posts/${id}`),
 
+  // All posts by a specific user (used on the profile grid)
+  byUser: (userId) => api.get(`/posts/user/${userId}`),
+
   // Update Post
   update: (id, data) => api.put(`/posts/${id}`, data),
 
