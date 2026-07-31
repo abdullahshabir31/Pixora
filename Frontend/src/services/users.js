@@ -4,6 +4,7 @@ import { api } from "./api";
 export const UsersAPI = {
   search: (q) => api.get("/users/search", { params: { q } }),
   profile: (username) => api.get(`/users/${username}`),
+  getById: (id) => api.get(`/users/profile/${id}`),
   update: (data) => api.patch("/users/me", data),
   followers: (username) => api.get(`/users/${username}/followers`),
   following: (username) => api.get(`/users/${username}/following`),
