@@ -265,6 +265,40 @@ def get_feed(
 
     return response
 
+@router.get(
+    "/user/{user_id}",
+    response_model=list[schemas.PostResponse],
+    summary="Get posts by user",
+)
+def get_posts_by_user(
+    user_id: int = Path(..., title="User ID", examples=[1]),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(oauth2.get_current_user)
+):
+
+    posts = (
+        db.query(models.Post)
+        .options(joinedload(models.Post.owner))
+        .filter(models.Post.owner_id == user_id)
+        .order_by(models.Post.created_at.desc())
+        .all()
+    )
+
+    response = []
+    for post in posts:
+        response.append({
+            "id": post.id,
+            "caption": post.caption,
+            "image_url": post.image_url,
+            "created_at": post.created_at,
+            "owner": post.owner,
+            "likes_count": len(post.likes),
+            "comments_count": db.query(models.Comment).filter(
+                models.Comment.post_id == post.id
+            ).count()
+        })
+
+    return response
 
 @router.get(
     "/{id}",

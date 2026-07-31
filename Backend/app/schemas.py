@@ -125,6 +125,10 @@ class ProfileResponse(BaseModel):
     id: int
     username: str
     email: EmailStr
+    full_name: str | None
+    bio: str | None
+    website: str | None
+    profile_image: str | None
 
     posts_count: int
     followers_count: int

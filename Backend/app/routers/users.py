@@ -122,6 +122,10 @@ def get_my_profile(
         "id": current_user.id,
         "username": current_user.username,
         "email": current_user.email,
+        "full_name": current_user.full_name,
+        "bio": current_user.bio,
+        "website": current_user.website,
+        "profile_image": current_user.profile_image,
         "posts_count": posts_count,
         "followers_count": followers_count,
         "following_count": following_count,
@@ -205,6 +209,10 @@ def get_user_profile(
         "id": user.id,
         "username": user.username,
         "email": user.email,
+        "full_name": user.full_name,
+        "bio": user.bio,
+        "website": user.website,
+        "profile_image": user.profile_image,
         "posts_count": posts_count,
         "followers_count": followers_count,
         "following_count": following_count,
@@ -383,4 +391,80 @@ def change_password(
 
     return {
         "message": "Password changed successfully"
+    }
+
+@router.get(
+    "/{username}",
+    response_model=schemas.ProfileResponse,
+    summary="Get Profile By Username",
+    description="""
+Retrieve a user's public profile using their username.
+""",
+)
+def get_profile_by_username(
+    username: str = Path(
+        ...,
+        title="Username",
+        examples=["abdullah31"]
+    ),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(oauth2.get_current_user)
+):
+
+    user = db.query(models.User).filter(
+        models.User.username == username
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    blocked = db.query(models.Block).filter(
+        models.Block.blocker_id == user.id,
+        models.Block.blocked_id == current_user.id
+    ).first()
+
+    if blocked:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are blocked by this user"
+        )
+
+    blocked_by_you = db.query(models.Block).filter(
+        models.Block.blocker_id == current_user.id,
+        models.Block.blocked_id == user.id
+    ).first()
+
+    if blocked_by_you:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You blocked this user"
+        )
+
+    posts_count = db.query(models.Post).filter(
+        models.Post.owner_id == user.id
+    ).count()
+
+    followers_count = db.query(models.Follow).filter(
+        models.Follow.following_id == user.id
+    ).count()
+
+    following_count = db.query(models.Follow).filter(
+        models.Follow.follower_id == user.id
+    ).count()
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "bio": user.bio,
+        "website": user.website,
+        "profile_image": user.profile_image,
+        "posts_count": posts_count,
+        "followers_count": followers_count,
+        "following_count": following_count,
+        "is_private": user.is_private
     }
