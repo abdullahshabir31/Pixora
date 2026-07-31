@@ -7,13 +7,18 @@ import { Avatar } from "@/components/Avatar";
 import { PostCard } from "@/components/PostCard";
 import { PostSkeleton, EmptyState } from "@/components/Empty";
 import { PostsAPI } from "@/services/posts";
+import { StoriesAPI } from "@/services/stories";
+import { UsersAPI } from "@/services/users";
 
 export default function FeedPage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [storyUsers, setStoryUsers] = useState([]);
+  const [storiesLoading, setStoriesLoading] = useState(true);
 
   useEffect(() => {
     fetchFeed();
+    fetchStories();
   }, []);
 
   const fetchFeed = async () => {
@@ -38,6 +43,29 @@ export default function FeedPage() {
     }
   };
 
+  const fetchStories = async () => {
+    try {
+      const res = await StoriesAPI.feed();
+
+      // Group stories by owner so each user shows only once in the rail
+      const ownerIds = [...new Set(res.data.map((s) => s.owner_id))];
+
+      const owners = await Promise.all(
+        ownerIds.map((id) =>
+          UsersAPI.getById(id)
+            .then((r) => ({ id, username: r.data.username }))
+            .catch(() => null),
+        ),
+      );
+
+      setStoryUsers(owners.filter(Boolean));
+    } catch (error) {
+      console.error("Stories Error:", error);
+    } finally {
+      setStoriesLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Stories rail */}
@@ -55,18 +83,19 @@ export default function FeedPage() {
             </span>
           </Link>
 
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Link
-              key={i}
-              to={`/stories/${i + 1}`}
-              className="flex flex-col items-center gap-1.5 min-w-16"
-            >
-              <Avatar username={`u${i}`} size="lg" storyRing />
-              <span className="text-[11px] text-muted-foreground truncate w-16 text-center">
-                user_{i + 1}
-              </span>
-            </Link>
-          ))}
+          {!storiesLoading &&
+            storyUsers.map((user) => (
+              <Link
+                key={user.id}
+                to={`/stories/${user.id}`}
+                className="flex flex-col items-center gap-1.5 min-w-16"
+              >
+                <Avatar username={user.username} size="lg" storyRing />
+                <span className="text-[11px] text-muted-foreground truncate w-16 text-center">
+                  {user.username}
+                </span>
+              </Link>
+            ))}
         </div>
       </div>
 
