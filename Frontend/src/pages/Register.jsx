@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Logo } from "@/components/Logo";
 import { Footer } from "@/components/Footer";
 import { AuthAPI } from "@/services/auth";
+import { useNavigate } from "react-router-dom";
 
 const registerSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -19,6 +20,7 @@ const registerSchema = z.object({
 });
 
 export default function RegisterPage() {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -30,10 +32,15 @@ export default function RegisterPage() {
 
   const onSubmit = async (values) => {
     try {
-      // Placeholder — wire this up to your FastAPI backend.
       await AuthAPI.register(values);
+
+      alert("Account created successfully!");
+
+      navigate("/login");
     } catch (error) {
-      console.error("Registration failed", error);
+      console.error(error);
+
+      alert(error.response?.data?.detail || "Registration failed.");
     }
   };
 
@@ -48,13 +55,40 @@ export default function RegisterPage() {
             transition={{ duration: 0.4 }}
             className="w-full max-w-md rounded-3xl border border-border bg-surface p-8 shadow-elegant"
           >
-            <h1 className="font-display text-3xl font-bold">Create your Pixora</h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">A place for moments that matter.</p>
+            <h1 className="font-display text-3xl font-bold">
+              Create your Pixora
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              A place for moments that matter.
+            </p>
 
-            <form className="mt-8 space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-              <Field icon={User} label="Full name" placeholder="Your name" error={errors.fullName} {...register("fullName")} />
-              <Field icon={AtSign} label="Username" placeholder="pixora_user" error={errors.username} {...register("username")} />
-              <Field icon={Mail} label="Email" placeholder="you@pixora.app" type="email" error={errors.email} {...register("email")} />
+            <form
+              className="mt-8 space-y-4"
+              onSubmit={handleSubmit(onSubmit)}
+              noValidate
+            >
+              <Field
+                icon={User}
+                label="Full name"
+                placeholder="Your name"
+                error={errors.fullName}
+                {...register("fullName")}
+              />
+              <Field
+                icon={AtSign}
+                label="Username"
+                placeholder="pixora_user"
+                error={errors.username}
+                {...register("username")}
+              />
+              <Field
+                icon={Mail}
+                label="Email"
+                placeholder="you@pixora.app"
+                type="email"
+                error={errors.email}
+                {...register("email")}
+              />
               <Field
                 icon={Lock}
                 label="Password"
@@ -74,7 +108,13 @@ export default function RegisterPage() {
             </form>
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
-              Already have an account? <Link to="/login" className="font-medium text-foreground hover:underline">Log in</Link>
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="font-medium text-foreground hover:underline"
+              >
+                Log in
+              </Link>
             </p>
           </motion.div>
         </div>
@@ -84,10 +124,19 @@ export default function RegisterPage() {
   );
 }
 
-function Field({ icon: Icon, label, placeholder, type = "text", error, ...inputProps }) {
+function Field({
+  icon: Icon,
+  label,
+  placeholder,
+  type = "text",
+  error,
+  ...inputProps
+}) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium text-muted-foreground">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+        {label}
+      </span>
       <div className="relative">
         <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -97,7 +146,9 @@ function Field({ icon: Icon, label, placeholder, type = "text", error, ...inputP
           {...inputProps}
         />
       </div>
-      {error && <p className="mt-1 text-xs text-destructive">{error.message}</p>}
+      {error && (
+        <p className="mt-1 text-xs text-destructive">{error.message}</p>
+      )}
     </label>
   );
 }

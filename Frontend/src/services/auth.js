@@ -14,7 +14,13 @@ export const AuthAPI = {
     });
   },
 
-  register: (data) => api.post("/users/", data),
+  register: (data) =>
+    api.post("/users/", {
+      username: data.username,
+      email: data.email,
+      password: data.password,
+      full_name: data.fullName,
+    }),
 
   me: () => api.get("/users/me"),
 
