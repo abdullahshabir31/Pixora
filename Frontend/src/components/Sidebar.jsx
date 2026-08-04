@@ -24,7 +24,8 @@ const nav = [
   { to: "/chats", label: "Messages", icon: MessageCircle },
   { to: "/notifications", label: "Notifications", icon: Bell },
   { to: "/saved", label: "Saved", icon: Bookmark },
-  { to: "/create-post", label: "Create", icon: PlusSquare },
+  { to: "/create-post", label: "Post", icon: PlusSquare },
+  { to: "/create-reel", label: "Reel", icon: Film },
 ];
 
 export function Sidebar() {
@@ -36,7 +37,8 @@ export function Sidebar() {
       </div>
       <nav className="flex-1 space-y-1">
         {nav.map(({ to, label, icon: Icon }) => {
-          const active = pathname === to || (to !== "/feed" && pathname.startsWith(to));
+          const active =
+            pathname === to || (to !== "/feed" && pathname.startsWith(to));
           return (
             <Link
               key={to}
@@ -111,6 +113,7 @@ const bottomItems = [
   { to: "/feed", icon: Home },
   { to: "/explore", icon: Compass },
   { to: "/create-post", icon: PlusSquare },
+  { to: "/create-reel", icon: Film },
   { to: "/reels", icon: Film },
   { to: "/profile/me", icon: User },
 ];
@@ -121,14 +124,18 @@ export function BottomNav() {
     <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 glass border-t border-border">
       <div className="flex items-center justify-around px-2 py-2">
         {bottomItems.map((it) => {
-          const active = pathname === it.to || (it.to !== "/feed" && pathname.startsWith(it.to));
+          const active =
+            pathname === it.to ||
+            (it.to !== "/feed" && pathname.startsWith(it.to));
           const Icon = it.icon;
           return (
             <Link
               key={it.to}
               to={it.to}
               className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl transition-all ${
-                active ? "bg-gradient-brand text-primary-foreground shadow-elegant" : "text-muted-foreground"
+                active
+                  ? "bg-gradient-brand text-primary-foreground shadow-elegant"
+                  : "text-muted-foreground"
               }`}
             >
               <Icon className="h-5 w-5" />
