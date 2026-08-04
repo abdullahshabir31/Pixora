@@ -16,4 +16,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// If the token is missing/expired/invalid, the backend replies 401 —
+// clear it and bounce to /login instead of leaving the app in a broken state.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("pixora-token");
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
 export default api;

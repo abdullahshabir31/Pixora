@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import { AppShell } from "@/layouts/AppShell";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 const Landing = lazy(() => import("@/pages/Landing"));
 const Login = lazy(() => import("@/pages/Login"));
@@ -41,34 +42,36 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          <Route element={<AppShell />}>
-            <Route path="/feed" element={<Feed />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/reels" element={<Reels />} />
-            <Route path="/reels/:id" element={<Reel />} />
-            <Route path="/create-reel" element={<CreateReel />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/chats" element={<Chats />} />
-            <Route path="/chats/:id" element={<Conversation />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/saved" element={<Saved />} />
-            <Route path="/create-post" element={<CreatePost />} />
-            <Route path="/create-story" element={<CreateStory />} />
-            <Route path="/stories/:id" element={<StoryViewer />} />
-            <Route path="/post/:id" element={<PostDetail />} />
-            <Route path="/edit-post/:id" element={<EditPost />} />
-            <Route path="/profile/:username" element={<Profile />} />
-            <Route
-              path="/profile/:username/followers"
-              element={<Followers />}
-            />
-            <Route
-              path="/profile/:username/following"
-              element={<Following />}
-            />
-            <Route path="/edit-profile" element={<EditProfile />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/settings/blocked" element={<BlockedUsers />} />
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppShell />}>
+              <Route path="/feed" element={<Feed />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/reels" element={<Reels />} />
+              <Route path="/reels/:id" element={<Reel />} />
+              <Route path="/create-reel" element={<CreateReel />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/chats" element={<Chats />} />
+              <Route path="/chats/:id" element={<Conversation />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/saved" element={<Saved />} />
+              <Route path="/create-post" element={<CreatePost />} />
+              <Route path="/create-story" element={<CreateStory />} />
+              <Route path="/stories/:id" element={<StoryViewer />} />
+              <Route path="/post/:id" element={<PostDetail />} />
+              <Route path="/edit-post/:id" element={<EditPost />} />
+              <Route path="/profile/:username" element={<Profile />} />
+              <Route
+                path="/profile/:username/followers"
+                element={<Followers />}
+              />
+              <Route
+                path="/profile/:username/following"
+                element={<Following />}
+              />
+              <Route path="/edit-profile" element={<EditProfile />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/blocked" element={<BlockedUsers />} />
+            </Route>
           </Route>
 
           <Route path="*" element={<NotFound />} />
