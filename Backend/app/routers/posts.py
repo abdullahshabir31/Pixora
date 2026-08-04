@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Form, Query, Path
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from app import cloudinary, models, oauth2, schemas
@@ -9,6 +10,44 @@ router = APIRouter(
     prefix="/posts",
     tags=["Posts"]
 )
+
+
+def get_private_owner_ids(db: Session) -> set[int]:
+    """IDs of all users whose account is private."""
+    rows = db.query(models.User.id).filter(
+        models.User.is_private == True  # noqa: E712
+    ).all()
+    return {row[0] for row in rows}
+
+
+def get_followed_ids(db: Session, current_user_id: int) -> set[int]:
+    """IDs of users that current_user follows."""
+    rows = db.query(models.Follow.following_id).filter(
+        models.Follow.follower_id == current_user_id
+    ).all()
+    return {row[0] for row in rows}
+
+
+def can_view_user_posts(
+    db: Session,
+    owner_id: int,
+    owner_is_private: bool,
+    current_user_id: int
+) -> bool:
+    """A private account's posts are only visible to the owner
+    themselves or to users who already follow them."""
+    if not owner_is_private:
+        return True
+
+    if owner_id == current_user_id:
+        return True
+
+    is_follower = db.query(models.Follow).filter(
+        models.Follow.follower_id == current_user_id,
+        models.Follow.following_id == owner_id
+    ).first()
+
+    return is_follower is not None
 
 
 @router.post(
@@ -144,10 +183,20 @@ def get_posts(
         [user[0] for user in blocked_by_users]
     )
 
+    private_owner_ids = get_private_owner_ids(db)
+    followed_ids = get_followed_ids(db, current_user.id)
+    visible_private_ids = followed_ids | {current_user.id}
+
     posts = (
         db.query(models.Post)
         .options(joinedload(models.Post.owner))
         .filter(~models.Post.owner_id.in_(blocked_ids))
+        .filter(
+            or_(
+                ~models.Post.owner_id.in_(private_owner_ids),
+                models.Post.owner_id.in_(visible_private_ids)
+            )
+        )
         .offset(skip)
         .limit(limit)
         .all()
@@ -276,6 +325,22 @@ def get_posts_by_user(
     current_user: models.User = Depends(oauth2.get_current_user)
 ):
 
+    owner = db.query(models.User).filter(
+        models.User.id == user_id
+    ).first()
+
+    if not owner:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    if not can_view_user_posts(db, user_id, owner.is_private, current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This account is private"
+        )
+
     posts = (
         db.query(models.Post)
         .options(joinedload(models.Post.owner))
@@ -318,10 +383,13 @@ Returns:
 - Total comments count
 
 Requirements:
+- User must be authenticated.
 - A valid post ID is required.
 - The post must exist in the database.
+- Blocked users' posts are not accessible.
+- Private accounts' posts are only visible to the owner or their followers.
 
-Access is denied if the requested post does not exist.
+Access is denied if the requested post does not exist, is from a blocked user, or belongs to a private account you don't follow.
 """
 )
 def get_post(
@@ -331,7 +399,8 @@ def get_post(
         description="Unique ID of the post whose details you want to retrieve.",
         examples=[1]
     ),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(oauth2.get_current_user)
 ):
 
     post = (
@@ -345,6 +414,29 @@ def get_post(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found"
+        )
+
+    blocked = db.query(models.Block).filter(
+        or_(
+            (models.Block.blocker_id == post.owner_id) &
+            (models.Block.blocked_id == current_user.id),
+            (models.Block.blocker_id == current_user.id) &
+            (models.Block.blocked_id == post.owner_id)
+        )
+    ).first()
+
+    if blocked:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found"
+        )
+
+    if not can_view_user_posts(
+        db, post.owner_id, post.owner.is_private, current_user.id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This account is private"
         )
 
     return {
