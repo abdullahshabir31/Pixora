@@ -9,12 +9,12 @@ import {
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Avatar } from "./Avatar";
-import { LikesAPI } from "@/services/posts";
+import { LikesAPI, SavedPostsAPI } from "@/services/posts";
 
 export function PostCard({ post }) {
   const [liked, setLiked] = useState(post.isLiked ?? false);
   const [likesCount, setLikesCount] = useState(post.likes);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState(post.isSaved ?? false);
 
   const handleLike = async () => {
     try {
@@ -29,6 +29,20 @@ export function PostCard({ post }) {
       }
     } catch (error) {
       console.error("Like Error:", error);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      if (saved) {
+        await SavedPostsAPI.unsave(post.id);
+        setSaved(false);
+      } else {
+        await SavedPostsAPI.save(post.id);
+        setSaved(true);
+      }
+    } catch (error) {
+      console.error("Save Error:", error);
     }
   };
 
@@ -94,7 +108,7 @@ export function PostCard({ post }) {
         </div>
 
         <button
-          onClick={() => setSaved((v) => !v)}
+          onClick={handleSave}
           className={`inline-flex h-10 w-10 items-center justify-center rounded-full ${
             saved ? "text-brand-2" : "hover:bg-accent"
           }`}
