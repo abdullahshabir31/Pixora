@@ -30,6 +30,8 @@ export const PostsAPI = {
 };
 
 export const LikesAPI = {
+  list: (postId) => api.get(`/posts/${postId}/likes`),
+
   like: (postId) => api.post(`/posts/${postId}/like`),
 
   unlike: (postId) => api.delete(`/posts/${postId}/like`),
