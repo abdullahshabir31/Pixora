@@ -1,139 +1,274 @@
-# 🚀 Pixora - Backend
+# 🚀 Pixora Backend
 
-This is the backend of **Pixora**, a modern full-stack social media platform built with **FastAPI** and **PostgreSQL**.
+The backend of **Pixora**, a modern full-stack social media platform built with **FastAPI**, **PostgreSQL**, and **Cloudinary**.
 
-The backend provides secure REST APIs for authentication, user management, posts, likes, comments, follows, saved posts, and other social media features. It follows a clean, scalable, and production-ready architecture using FastAPI, SQLAlchemy, and PostgreSQL.
+It provides secure, scalable, and production-ready REST APIs for authentication, user management, posts, likes, comments, follows, saved posts, stories, reels, chat, notifications, and other social media features.
 
 ---
 
-## 🚀 Tech Stack
+# 🚀 Tech Stack
 
 - Python
 - FastAPI
 - Uvicorn
 - PostgreSQL
-- SQLAlchemy
+- SQLAlchemy ORM
 - Alembic
 - JWT Authentication
-- Passlib & Bcrypt
 - Pydantic
+- Passlib
+- Python-Jose
+- Cloudinary
 - Python-dotenv
 
 ---
 
-## 📂 Project Structure
+# ✨ Features
+
+## 🔐 Authentication
+
+- User Registration
+- User Login
+- JWT Authentication
+- Secure Password Hashing
+- Protected API Endpoints
+
+---
+
+## 👤 User Management
+
+- User Profiles
+- Edit Profile
+- Profile Picture
+- Bio
+- Website
+- Gender
+- Date of Birth
+- Public / Private Accounts
+- Follow / Unfollow Users
+- Followers & Following
+
+---
+
+## 📸 Posts
+
+- Create Posts
+- Upload Images (Cloudinary)
+- Edit Posts
+- Delete Posts
+- Home Feed
+- Individual Post API
+
+---
+
+## ❤️ Social Features
+
+- Like / Unlike Posts
+- Comment System
+- Save / Unsave Posts
+- User Search
+
+---
+
+## 📖 Stories
+
+- Create Stories
+- View Stories
+
+---
+
+## 🎥 Reels
+
+- Create Reels
+- Browse Reels
+
+---
+
+## 💬 Chat
+
+- One-to-One Messaging
+
+---
+
+## 🔔 Notifications
+
+- Notification APIs
+
+---
+
+## 🚫 Privacy & Security
+
+- Block / Unblock Users
+- JWT Authorization
+- Secure Password Hashing
+- Input Validation
+
+---
+
+# 📂 Project Structure
 
 ```text
 Backend/
 │
 ├── app/
-│   ├── main.py          # FastAPI application entry point
-│   ├── database.py      # Database connection
-│   ├── models.py        # SQLAlchemy models
-│   ├── schemas.py       # Pydantic schemas
-│   ├── oauth2.py        # JWT authentication
-│   │
-│   └── routers/         # API route modules
+│   ├── routers/
+│   ├── cloudinary.py
+│   ├── config.py
+│   ├── database.py
+│   ├── main.py
+│   ├── models.py
+│   ├── oauth2.py
+│   ├── schemas.py
+│   └── utils.py
 │
 ├── alembic/
 ├── requirements.txt
 ├── .env
-└── venv/
+└── README.md
 ```
 
 ---
 
-## ⚙️ Installation & Setup
+# ⚙️ Installation
 
-Clone the repository
-
-```bash
-git clone <repository-url>
-```
-
-Move into the backend folder
+## Clone Repository
 
 ```bash
-cd Backend
+git clone https://github.com/abdullahshabir31/Pixora-Project.git
 ```
 
-Create a virtual environment
+```bash
+cd Pixora-Project/Backend
+```
+
+---
+
+## Create Virtual Environment
 
 ```bash
 python -m venv venv
 ```
 
-Activate the virtual environment
-
-Windows
+### Windows
 
 ```bash
 venv\Scripts\activate
 ```
 
-Install dependencies
+---
+
+## Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Create a `.env` file
+---
+
+## Configure Environment Variables
+
+Create a `.env` file:
 
 ```env
 DATABASE_URL=your_database_url
 SECRET_KEY=your_secret_key
 ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-Run the development server
+---
+
+## Run Development Server
 
 ```bash
-python -m uvicorn app.main:app --reload
+uvicorn app.main:app --reload
 ```
 
-API Documentation
+Backend runs on:
+
+```text
+http://127.0.0.1:8000
+```
+
+---
+
+# 📚 API Documentation
+
+Swagger UI
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
+ReDoc
+
+```text
+http://127.0.0.1:8000/redoc
+```
+
 ---
 
-## ✨ Current Features
+# 🗄 Database
 
-- User Registration
-- User Login
+Pixora Backend uses **PostgreSQL** with **SQLAlchemy ORM** and **Alembic** to provide a scalable and maintainable database architecture.
+
+---
+
+# ☁️ Media Storage
+
+Images are securely uploaded and managed using **Cloudinary**.
+
+---
+
+# 🏗 Backend Architecture
+
+```text
+Client
+   │
+   ▼
+FastAPI REST API
+   │
+JWT Authentication
+   │
+SQLAlchemy ORM
+   │
+PostgreSQL Database
+   │
+Cloudinary
+```
+
+---
+
+# 📊 Backend Highlights
+
+- RESTful API Design
 - JWT Authentication
-- Protected Routes
-- User Profiles
-- Create Posts
-- Like Posts
-- Comment System
-- Follow / Unfollow Users
-- Saved Posts
+- PostgreSQL Database
+- SQLAlchemy ORM
+- Alembic Migrations
+- Cloudinary Integration
+- Modular Architecture
+- Scalable Codebase
+- Production-Ready Structure
 
 ---
 
-## 🗄️ Database
+# 👨‍💻 Author
 
-Pixora uses **PostgreSQL** as the primary database with **SQLAlchemy ORM** for database management.
+## Abdullah Shabir
 
----
+### Connect With Me
 
-## 📌 Status
-
-🚧 Pixora Backend is currently under active development.
-
-New APIs and features will be added continuously.
+- **GitHub:** https://github.com/abdullahshabir31
+- **LinkedIn:** https://www.linkedin.com/in/abdullahshabir31/
+- **Portfolio:** https://abdullah-shabir-portfolio.vercel.app/
 
 ---
 
-## 👨‍💻 Author
+## ⭐ Support
 
-**Abdullah Shabir**
-
-## 🔗 Connect With Me
-
-- GitHub: https://github.com/abdullahshabir31
-- LinkedIn: https://www.linkedin.com/in/abdullahshabir31
-- Portfolio: https://abdullah-shabir-portfolio.vercel.app/
+If you found this project helpful, consider giving it a ⭐ on GitHub.
