@@ -33,7 +33,7 @@ export default function EditPostPage() {
     e.preventDefault();
     try {
       setSaving(true);
-      await PostsAPI.update(id, { caption });
+      await PostsAPI.update(id, { caption, image_url: post.image_url });
       navigate(`/post/${id}`);
     } catch (error) {
       console.error(error);
