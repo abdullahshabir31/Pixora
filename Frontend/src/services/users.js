@@ -1,21 +1,21 @@
-// User-related endpoints — placeholders to be wired up against the FastAPI backend.
+// User-related endpoints — wired up against the FastAPI backend.
 import { api } from "./api";
 
 export const UsersAPI = {
-  search: (q) => api.get("/users/search", { params: { q } }),
+  search: (q) => api.get("/users/search", { params: { username: q } }),
   profile: (username) => api.get(`/users/${username}`),
   getById: (id) => api.get(`/users/profile/${id}`),
   update: (formData) =>
     api.put("/users/me", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
-  followers: (username) => api.get(`/users/${username}/followers`),
-  following: (username) => api.get(`/users/${username}/following`),
-  follow: (username) => api.post(`/users/${username}/follow`),
-  unfollow: (username) => api.delete(`/users/${username}/follow`),
-  blockedList: () => api.get("/users/me/blocked"),
-  block: (username) => api.post(`/users/${username}/block`),
-  unblock: (username) => api.delete(`/users/${username}/block`),
+  followers: (userId) => api.get(`/users/${userId}/followers`),
+  following: (userId) => api.get(`/users/${userId}/following`),
+  follow: (userId) => api.post(`/users/${userId}/follow`),
+  unfollow: (userId) => api.delete(`/users/${userId}/follow`),
+  blockedList: () => api.get("/users/me/blocked-users"),
+  block: (userId) => api.post(`/users/${userId}/block`),
+  unblock: (userId) => api.delete(`/users/${userId}/block`),
 };
 
 export default UsersAPI;
