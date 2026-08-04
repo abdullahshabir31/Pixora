@@ -24,6 +24,9 @@ export default function ProfilePage() {
   const [postsLoading, setPostsLoading] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
 
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+
   useEffect(() => {
     fetchProfile();
   }, [username]);
@@ -39,7 +42,17 @@ export default function ProfilePage() {
       ]);
 
       setProfile(profileRes.data);
-      setIsOwnProfile(profileRes.data.username === meRes.data.username);
+
+      const own = profileRes.data.username === meRes.data.username;
+      setIsOwnProfile(own);
+
+      if (!own) {
+        const myFollowingRes = await UsersAPI.following(meRes.data.id);
+        const followingIds = myFollowingRes.data.following.map(
+          (f) => f.following_id,
+        );
+        setIsFollowing(followingIds.includes(profileRes.data.id));
+      }
 
       const postsRes = await PostsAPI.byUser(profileRes.data.id);
       setPosts(postsRes.data);
@@ -49,6 +62,26 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
       setPostsLoading(false);
+    }
+  };
+
+  const handleToggleFollow = async () => {
+    setFollowLoading(true);
+    try {
+      if (isFollowing) {
+        await UsersAPI.unfollow(profile.id);
+        setIsFollowing(false);
+        setProfile((p) => ({ ...p, followers_count: p.followers_count - 1 }));
+      } else {
+        await UsersAPI.follow(profile.id);
+        setIsFollowing(true);
+        setProfile((p) => ({ ...p, followers_count: p.followers_count + 1 }));
+      }
+    } catch (error) {
+      console.error(error);
+      alert(error?.response?.data?.detail || "Action failed.");
+    } finally {
+      setFollowLoading(false);
     }
   };
 
@@ -84,7 +117,7 @@ export default function ProfilePage() {
               <h1 className="font-display text-2xl font-bold">
                 @{profile.username}
               </h1>
-              {isOwnProfile && (
+              {isOwnProfile ? (
                 <>
                   <Link
                     to="/edit-profile"
@@ -99,6 +132,18 @@ export default function ProfilePage() {
                     <Settings className="h-4 w-4" />
                   </Link>
                 </>
+              ) : (
+                <button
+                  onClick={handleToggleFollow}
+                  disabled={followLoading}
+                  className={`rounded-full px-4 py-1.5 text-xs font-medium transition-colors disabled:opacity-60 ${
+                    isFollowing
+                      ? "border border-border hover:bg-accent"
+                      : "bg-gradient-brand text-primary-foreground"
+                  }`}
+                >
+                  {followLoading ? "..." : isFollowing ? "Following" : "Follow"}
+                </button>
               )}
             </div>
             <div className="mt-3 text-sm">
