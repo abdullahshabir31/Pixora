@@ -97,6 +97,71 @@ def send_message(
 
     return new_message
 
+@router.get(
+    "/conversations",
+    response_model=list[schemas.ConversationResponse],
+    summary="Get all conversations",
+    description="""
+Retrieve a list of all conversations for the authenticated user.
+
+Each conversation includes the other participant's info, the most recent
+message exchanged, and how many messages from them are still unread.
+"""
+)
+def get_conversations(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(oauth2.get_current_user)
+):
+    messages = (
+        db.query(models.Message)
+        .filter(
+            or_(
+                models.Message.sender_id == current_user.id,
+                models.Message.receiver_id == current_user.id
+            )
+        )
+        .order_by(models.Message.created_at.desc())
+        .all()
+    )
+
+    conversations = {}
+
+    for message in messages:
+        other_id = (
+            message.receiver_id
+            if message.sender_id == current_user.id
+            else message.sender_id
+        )
+
+        if other_id not in conversations:
+            conversations[other_id] = {
+                "last_message": message,
+                "unread_count": 0
+            }
+
+        if (
+            message.receiver_id == current_user.id
+            and not message.is_seen
+        ):
+            conversations[other_id]["unread_count"] += 1
+
+    response = []
+
+    for other_id, data in conversations.items():
+        other_user = db.query(models.User).filter(
+            models.User.id == other_id
+        ).first()
+
+        if not other_user:
+            continue
+
+        response.append({
+            "user": other_user,
+            "last_message": data["last_message"],
+            "unread_count": data["unread_count"]
+        })
+
+    return response
 
 @router.get(
     "/{user_id}",

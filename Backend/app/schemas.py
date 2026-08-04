@@ -274,3 +274,12 @@ class NotificationResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class ConversationResponse(BaseModel):
+    user: UserSearchResponse
+    last_message: MessageResponse | None
+    unread_count: int
+
+    model_config = {
+        "from_attributes": True
+    }
