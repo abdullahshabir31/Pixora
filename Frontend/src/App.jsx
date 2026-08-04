@@ -20,6 +20,7 @@ const Conversation = lazy(() => import("@/pages/Conversation"));
 const Notifications = lazy(() => import("@/pages/Notifications"));
 const Saved = lazy(() => import("@/pages/Saved"));
 const CreatePost = lazy(() => import("@/pages/CreatePost"));
+const CreateReel = lazy(() => import("@/pages/CreateReel"));
 const CreateStory = lazy(() => import("@/pages/CreateStory"));
 const StoryViewer = lazy(() => import("@/pages/StoryViewer"));
 const PostDetail = lazy(() => import("@/pages/PostDetail"));
@@ -45,6 +46,7 @@ export default function App() {
             <Route path="/explore" element={<Explore />} />
             <Route path="/reels" element={<Reels />} />
             <Route path="/reels/:id" element={<Reel />} />
+            <Route path="/create-reel" element={<CreateReel />} />
             <Route path="/search" element={<Search />} />
             <Route path="/chats" element={<Chats />} />
             <Route path="/chats/:id" element={<Conversation />} />
@@ -56,8 +58,14 @@ export default function App() {
             <Route path="/post/:id" element={<PostDetail />} />
             <Route path="/edit-post/:id" element={<EditPost />} />
             <Route path="/profile/:username" element={<Profile />} />
-            <Route path="/profile/:username/followers" element={<Followers />} />
-            <Route path="/profile/:username/following" element={<Following />} />
+            <Route
+              path="/profile/:username/followers"
+              element={<Followers />}
+            />
+            <Route
+              path="/profile/:username/following"
+              element={<Following />}
+            />
             <Route path="/edit-profile" element={<EditProfile />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/settings/blocked" element={<BlockedUsers />} />
