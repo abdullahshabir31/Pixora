@@ -1,16 +1,17 @@
 import { Link, useParams } from "react-router-dom";
-import { Settings, Grid3x3, Film, Bookmark, UserCheck } from "lucide-react";
+import { Play, Settings, Grid3x3, Film, Bookmark, UserCheck } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { EmptyState, PostSkeleton } from "@/components/Empty";
 import { useEffect, useState } from "react";
 import { UsersAPI } from "@/services/users";
-import { PostsAPI } from "@/services/posts";
+import { PostsAPI, SavedPostsAPI } from "@/services/posts";
+import { ReelsAPI } from "@/services/reels";
 import { AuthAPI } from "@/services/auth";
 
-const tabs = [
+const allTabs = [
   { key: "posts", label: "Posts", icon: Grid3x3 },
   { key: "reels", label: "Reels", icon: Film },
-  { key: "saved", label: "Saved", icon: Bookmark },
+  { key: "saved", label: "Saved", icon: Bookmark, ownOnly: true },
   { key: "tagged", label: "Tagged", icon: UserCheck },
 ];
 
@@ -27,9 +28,51 @@ export default function ProfilePage() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
 
+  const [reels, setReels] = useState([]);
+  const [reelsLoading, setReelsLoading] = useState(false);
+  const [reelsLoaded, setReelsLoaded] = useState(false);
+
+  const [saved, setSaved] = useState([]);
+  const [savedLoading, setSavedLoading] = useState(false);
+  const [savedLoaded, setSavedLoaded] = useState(false);
+
+  const tabs = allTabs.filter((t) => !t.ownOnly || isOwnProfile);
+
   useEffect(() => {
     fetchProfile();
+    // Reset tab-scoped data when navigating to a different profile.
+    setTab("posts");
+    setReels([]);
+    setReelsLoaded(false);
+    setSaved([]);
+    setSavedLoaded(false);
   }, [username]);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    if (tab === "reels" && !reelsLoaded) {
+      setReelsLoading(true);
+      ReelsAPI.byUser(profile.id)
+        .then((res) => setReels(res.data))
+        .catch((error) => console.error("Reels Error:", error))
+        .finally(() => {
+          setReelsLoading(false);
+          setReelsLoaded(true);
+        });
+    }
+
+    if (tab === "saved" && isOwnProfile && !savedLoaded) {
+      setSavedLoading(true);
+      SavedPostsAPI.list()
+        .then((res) => setSaved(res.data))
+        .catch((error) => console.error("Saved Posts Error:", error))
+        .finally(() => {
+          setSavedLoading(false);
+          setSavedLoaded(true);
+        });
+    }
+  }, [tab, profile, isOwnProfile, reelsLoaded, savedLoaded]);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -195,13 +238,9 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        {tab === "posts" ? (
-          postsLoading ? (
-            <div className="grid grid-cols-3 gap-1 p-1">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="aspect-square skeleton rounded-lg" />
-              ))}
-            </div>
+        {tab === "posts" &&
+          (postsLoading ? (
+            <GridSkeleton />
           ) : posts.length === 0 ? (
             <div className="p-6">
               <EmptyState
@@ -225,16 +264,87 @@ export default function ProfilePage() {
                 </Link>
               ))}
             </div>
-          )
-        ) : (
+          ))}
+
+        {tab === "reels" &&
+          (reelsLoading ? (
+            <GridSkeleton />
+          ) : reels.length === 0 ? (
+            <div className="p-6">
+              <EmptyState
+                title="No reels yet"
+                description="Reels shared by this account will show up here."
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-1 p-1">
+              {reels.map((reel) => (
+                <Link
+                  key={reel.id}
+                  to="/reels"
+                  className="relative aspect-square overflow-hidden rounded-lg bg-black"
+                >
+                  <video
+                    src={reel.video_url}
+                    className="h-full w-full object-cover"
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                  <Play className="absolute top-1.5 right-1.5 h-4 w-4 text-white drop-shadow" />
+                </Link>
+              ))}
+            </div>
+          ))}
+
+        {tab === "saved" &&
+          isOwnProfile &&
+          (savedLoading ? (
+            <GridSkeleton />
+          ) : saved.length === 0 ? (
+            <div className="p-6">
+              <EmptyState
+                title="No saved posts"
+                description="Posts you save will show up here. Only you can see them."
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-1 p-1">
+              {saved.map((post) => (
+                <Link
+                  key={post.id}
+                  to={`/post/${post.id}`}
+                  className="aspect-square overflow-hidden rounded-lg bg-gradient-brand-soft"
+                >
+                  <img
+                    src={post.image_url}
+                    alt={post.caption || "post"}
+                    className="h-full w-full object-cover"
+                  />
+                </Link>
+              ))}
+            </div>
+          ))}
+
+        {tab === "tagged" && (
           <div className="p-6">
             <EmptyState
               title="Coming soon"
-              description="This tab isn't wired up yet."
+              description="Tagging people in posts isn't supported yet."
             />
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function GridSkeleton() {
+  return (
+    <div className="grid grid-cols-3 gap-1 p-1">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="aspect-square skeleton rounded-lg" />
+      ))}
     </div>
   );
 }
